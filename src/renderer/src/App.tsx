@@ -1,34 +1,33 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { useState } from 'react'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+  const [url, setUrl] = useState('https://youtube.com')
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
+    <div className="flex flex-col h-screen bg-gray-900">
+      {/* 주소 표시줄 */}
+      <div className="hidden flex items-center gap-2 px-4 py-2 bg-gray-800 border-b border-gray-700">
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          placeholder="Enter URL..."
+        />
+        <button
+          onClick={() => {
+            const webview = document.querySelector('webview') as any
+            if (webview) webview.src = url
+          }}
+          className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+        >
+          Go
+        </button>
       </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+
+      {/* YouTube 뷰어 */}
+      <webview src={url} className="flex-1 w-full" allowpopups="true" />
+    </div>
   )
 }
 
