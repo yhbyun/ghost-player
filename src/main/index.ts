@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { logger } from './logger'
 
 let mainWindow: BrowserWindow | null
 
@@ -57,7 +58,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   ipcMain.on('drag-window', (_, { deltaX, deltaY }) => {
-    console.log('drag-window', { deltaX, deltaY })
+    logger.log('dragging', 'drag-window', { deltaX, deltaY })
     if (mainWindow) {
       const [x, y] = mainWindow.getPosition()
       mainWindow.setPosition(x + deltaX, y + deltaY)

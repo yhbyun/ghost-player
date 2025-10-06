@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { logger } from './logger'
 
 function App(): React.JSX.Element {
   const [url, setUrl] = useState('https://youtube.com')
@@ -14,7 +15,7 @@ function App(): React.JSX.Element {
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
     // Ensure we are not clicking on the content area
     if (e.target === e.currentTarget) {
-      console.log('handleMouseDown', e.clientX, e.clientY)
+      logger.log('dragging', 'handleMouseDown', e.clientX, e.clientY)
       dragRef.current = {
         isDragging: true,
         startX: e.clientX,
@@ -30,14 +31,14 @@ function App(): React.JSX.Element {
 
       const deltaX = e.clientX - dragRef.current.startX
       const deltaY = e.clientY - dragRef.current.startY
-      console.log('handleMouseMove', { deltaX, deltaY })
+      logger.log('dragging', 'handleMouseMove', { deltaX, deltaY })
 
       window.api.dragWindow(deltaX, deltaY)
     }
 
     const handleMouseUp = (): void => {
       if (dragRef.current.isDragging) {
-        console.log('handleMouseUp')
+        logger.log('dragging', 'handleMouseUp')
         dragRef.current.isDragging = false
         setIsDragging(false)
       }
