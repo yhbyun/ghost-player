@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { logger } from './logger'
+import Player from './components/Player'
 
 function App(): React.JSX.Element {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [url, setUrl] = useState('https://youtube.com')
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -69,7 +71,7 @@ function App(): React.JSX.Element {
         onMouseEnter={() => setIsHovering(false)}
         onMouseLeave={() => setIsHovering(true)}
       >
-        <webview src={url} className="w-full h-full" allowpops="true" />
+        <Player url={url} />
       </div>
     </div>
   )
