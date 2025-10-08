@@ -1,29 +1,89 @@
 import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
+import __Store from 'electron-store'
+// @ts-ignore: electron-store a CommonJS module, so a type error related to default export occurs.
+const Store = __Store.default || __Store
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
-import { services } from '../config/services'
+import { services, Service } from '../config/services'
+
+interface StoreType {
+  windowBounds: {
+    width: number
+    height: number
+    x?: number
+    y?: number
+  }
+  isTransparent: boolean
+  opacity: number
+  lastService: string
+}
 
 let mainWindow: BrowserWindow | null
 let isTransparent = false // Transparency is disabled by default
 let opacity = 0.8 // Default opacity setting is 80%
 
+const store = new Store<StoreType>({
+  schema: {
+    windowBounds: {
+      type: 'object',
+      properties: {
+        width: { type: 'number' },
+        height: { type: 'number' },
+        x: { type: 'number' },
+        y: { type: 'number' }
+      },
+      default: {
+        width: 900,
+        height: 670
+      }
+    },
+    isTransparent: {
+      type: 'boolean',
+      default: false
+    },
+    opacity: {
+      type: 'number',
+      default: 0.8
+    },
+    lastService: {
+      type: 'string',
+      default: 'Netflix'
+    }
+  }
+})
+
 function createWindow(): void {
+  const { width, height, x, y } = store.get('windowBounds')
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width,
+    height,
+    x,
+    y,
     show: false,
     autoHideMenuBar: true,
     transparent: true,
     frame: false,
+    opacity: isTransparent ? opacity : 1.0,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       webviewTag: true
     }
+  })
+
+  mainWindow.on('resize', () => {
+    const { width, height } = mainWindow!.getBounds()
+    store.set('windowBounds', { ...store.get('windowBounds'), width, height })
+  })
+
+  mainWindow.on('move', () => {
+    const { x, y } = mainWindow!.getBounds()
+    store.set('windowBounds', { ...store.get('windowBounds'), x, y })
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -49,6 +109,9 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  isTransparent = store.get('isTransparent')
+  opacity = store.get('opacity')
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
@@ -62,8 +125,9 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  ipcMain.handle('get-initial-service', () => {
-    return services.find((s) => s.name === 'Netflix')
+  ipcMain.handle('get-initial-service', (): Service | undefined => {
+    const lastServiceName = store.get('lastService')
+    return services.find((s) => s.name === lastServiceName)
   })
 
   ipcMain.on('drag-window', (_, { deltaX, deltaY }) => {
@@ -82,6 +146,7 @@ app.whenReady().then(() => {
         label: service.name,
         click: (): void => {
           logger.log('menu', 'change-service', service.name)
+          store.set('lastService', service.name)
           mainWindow?.webContents.send('change-service', service)
         }
       }))
@@ -98,6 +163,7 @@ app.whenReady().then(() => {
               checked: isTransparent,
               click: (menuItem): void => {
                 isTransparent = menuItem.checked
+                store.set('isTransparent', isTransparent)
                 if (isTransparent) {
                   // Apply the stored opacity value
                   mainWindow?.setOpacity(opacity)
@@ -118,6 +184,7 @@ app.whenReady().then(() => {
                   click: (): void => {
                     // Only update the setting
                     opacity = o
+                    store.set('opacity', opacity)
                     // If transparency is currently active, apply the new opacity immediately
                     if (isTransparent) {
                       mainWindow?.setOpacity(opacity)
