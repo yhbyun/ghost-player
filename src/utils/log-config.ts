@@ -5,6 +5,7 @@
  * Only logs belonging to these categories will be displayed.
  */
 export const activeCategories: string[] = [
-  'dragging'
+  'dragging',
+  'webview'
   // Add other categories here to enable them, e.g., 'api', 'lifecycle'
 ]

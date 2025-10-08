@@ -1,10 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { Service } from '../config/services'
 
 // Custom APIs for renderer
 const api = {
   dragWindow: (deltaX: number, deltaY: number): void => {
     ipcRenderer.send('drag-window', { deltaX, deltaY })
+  },
+  getInitialService: (): Promise<Service | undefined> => {
+    return ipcRenderer.invoke('get-initial-service')
   }
 }
 

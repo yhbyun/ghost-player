@@ -1,12 +1,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { logger } from './logger'
 import Player from './components/Player'
+import { Service } from '../../config/services'
 
 function App(): React.JSX.Element {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [url, setUrl] = useState('https://youtube.com')
+  const [service, setService] = useState<Service | undefined>(undefined)
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    const fetchInitialService = async (): Promise<void> => {
+      const initialService = await window.api.getInitialService()
+      setService(initialService)
+    }
+    fetchInitialService()
+  }, [])
 
   const dragRef = useRef({
     isDragging: false,
@@ -55,6 +63,10 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  if (!service) {
+    return null // Or a loading spinner
+  }
+
   return (
     <div
       className={`relative h-screen p-2 ${
@@ -71,7 +83,7 @@ function App(): React.JSX.Element {
         onMouseEnter={() => setIsHovering(false)}
         onMouseLeave={() => setIsHovering(true)}
       >
-        <Player url={url} />
+        <Player service={service} />
       </div>
     </div>
   )

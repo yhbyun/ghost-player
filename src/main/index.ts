@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
+import { services } from '../config/services'
 
 let mainWindow: BrowserWindow | null
 
@@ -13,6 +14,7 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
+    transparent: true,
     frame: false,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -35,6 +37,7 @@ function createWindow(): void {
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -56,6 +59,10 @@ app.whenReady().then(() => {
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
+
+  ipcMain.handle('get-initial-service', () => {
+    return services.find((s) => s.name === 'Netflix')
+  })
 
   ipcMain.on('drag-window', (_, { deltaX, deltaY }) => {
     logger.log('dragging', 'drag-window', { deltaX, deltaY })
