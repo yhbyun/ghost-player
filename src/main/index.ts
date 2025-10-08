@@ -6,6 +6,8 @@ import { logger } from './logger'
 import { services } from '../config/services'
 
 let mainWindow: BrowserWindow | null
+let isTransparent = false // Transparency is disabled by default
+let opacity = 0.8 // Default opacity setting is 80%
 
 function createWindow(): void {
   // Create the browser window.
@@ -83,6 +85,50 @@ app.whenReady().then(() => {
           mainWindow?.webContents.send('change-service', service)
         }
       }))
+    },
+    {
+      label: 'Settings',
+      submenu: [
+        {
+          label: 'Transparency',
+          submenu: [
+            {
+              label: 'Enabled',
+              type: 'checkbox',
+              checked: isTransparent,
+              click: (menuItem): void => {
+                isTransparent = menuItem.checked
+                if (isTransparent) {
+                  // Apply the stored opacity value
+                  mainWindow?.setOpacity(opacity)
+                } else {
+                  // Make it fully opaque
+                  mainWindow?.setOpacity(1.0)
+                }
+              }
+            },
+            {
+              label: 'Opacity',
+              submenu: [10, 20, 30, 40, 50, 60, 70, 80, 90].map((p) => {
+                const o = p / 100
+                return {
+                  label: `${p}%`,
+                  type: 'radio',
+                  checked: opacity === o,
+                  click: (): void => {
+                    // Only update the setting
+                    opacity = o
+                    // If transparency is currently active, apply the new opacity immediately
+                    if (isTransparent) {
+                      mainWindow?.setOpacity(opacity)
+                    }
+                  }
+                }
+              })
+            }
+          ]
+        }
+      ]
     }
   ])
   Menu.setApplicationMenu(menu)
