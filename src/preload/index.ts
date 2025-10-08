@@ -9,6 +9,13 @@ const api = {
   },
   getInitialService: (): Promise<Service | undefined> => {
     return ipcRenderer.invoke('get-initial-service')
+  },
+  onChangeService: (callback: (service: Service) => void): (() => void) => {
+    const handler = (_event, service): void => callback(service)
+    ipcRenderer.on('change-service', handler)
+    return () => {
+      ipcRenderer.removeListener('change-service', handler)
+    }
   }
 }
 

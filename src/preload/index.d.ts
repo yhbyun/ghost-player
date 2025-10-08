@@ -7,6 +7,7 @@ declare global {
     api: {
       dragWindow: (deltaX: number, deltaY: number) => void
       getInitialService: () => Promise<Service | undefined>
+      onChangeService: (callback: (service: Service) => void) => () => void
     }
   }
 }

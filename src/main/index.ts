@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -71,6 +71,21 @@ app.whenReady().then(() => {
       mainWindow.setPosition(x + deltaX, y + deltaY)
     }
   })
+
+  const menu = Menu.buildFromTemplate([
+    { role: 'appMenu' },
+    {
+      label: 'Services',
+      submenu: services.map((service) => ({
+        label: service.name,
+        click: (): void => {
+          logger.log('menu', 'change-service', service.name)
+          mainWindow?.webContents.send('change-service', service)
+        }
+      }))
+    }
+  ])
+  Menu.setApplicationMenu(menu)
 
   createWindow()
 

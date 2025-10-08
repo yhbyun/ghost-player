@@ -14,6 +14,12 @@ function App(): React.JSX.Element {
       setService(initialService)
     }
     fetchInitialService()
+
+    const cleanup = window.api.onChangeService((newService) => {
+      setService(newService)
+    })
+
+    return cleanup
   }, [])
 
   const dragRef = useRef({
@@ -83,7 +89,7 @@ function App(): React.JSX.Element {
         onMouseEnter={() => setIsHovering(false)}
         onMouseLeave={() => setIsHovering(true)}
       >
-        <Player service={service} />
+        <Player key={service.name} service={service} />
       </div>
     </div>
   )
