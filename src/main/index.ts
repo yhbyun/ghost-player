@@ -1,58 +1,15 @@
-import { app, shell, BrowserWindow, ipcMain, Menu } from 'electron'
-import __Store from 'electron-store'
-// @ts-ignore: electron-store a CommonJS module, so a type error related to default export occurs.
-const Store = __Store.default || __Store
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
 import { services, Service } from '../config/services'
-
-interface StoreType {
-  windowBounds: {
-    width: number
-    height: number
-    x?: number
-    y?: number
-  }
-  isTransparent: boolean
-  opacity: number
-  lastService: string
-}
+import { store } from './store'
+import { setupMenu } from './menu'
 
 let mainWindow: BrowserWindow | null
 let isTransparent = false // Transparency is disabled by default
 let opacity = 0.8 // Default opacity setting is 80%
-
-const store = new Store<StoreType>({
-  schema: {
-    windowBounds: {
-      type: 'object',
-      properties: {
-        width: { type: 'number' },
-        height: { type: 'number' },
-        x: { type: 'number' },
-        y: { type: 'number' }
-      },
-      default: {
-        width: 900,
-        height: 670
-      }
-    },
-    isTransparent: {
-      type: 'boolean',
-      default: false
-    },
-    opacity: {
-      type: 'number',
-      default: 0.8
-    },
-    lastService: {
-      type: 'string',
-      default: 'Netflix'
-    }
-  }
-})
 
 function createWindow(): void {
   const { width, height, x, y } = store.get('windowBounds')
@@ -138,67 +95,13 @@ app.whenReady().then(() => {
     }
   })
 
-  const menu = Menu.buildFromTemplate([
-    { role: 'appMenu' },
-    {
-      label: 'Services',
-      submenu: services.map((service) => ({
-        label: service.name,
-        click: (): void => {
-          logger.log('menu', 'change-service', service.name)
-          store.set('lastService', service.name)
-          mainWindow?.webContents.send('change-service', service)
-        }
-      }))
-    },
-    {
-      label: 'Settings',
-      submenu: [
-        {
-          label: 'Transparency',
-          submenu: [
-            {
-              label: 'Enabled',
-              type: 'checkbox',
-              checked: isTransparent,
-              click: (menuItem): void => {
-                isTransparent = menuItem.checked
-                store.set('isTransparent', isTransparent)
-                if (isTransparent) {
-                  // Apply the stored opacity value
-                  mainWindow?.setOpacity(opacity)
-                } else {
-                  // Make it fully opaque
-                  mainWindow?.setOpacity(1.0)
-                }
-              }
-            },
-            {
-              label: 'Opacity',
-              submenu: [10, 20, 30, 40, 50, 60, 70, 80, 90].map((p) => {
-                const o = p / 100
-                return {
-                  label: `${p}%`,
-                  type: 'radio',
-                  checked: opacity === o,
-                  click: (): void => {
-                    // Only update the setting
-                    opacity = o
-                    store.set('opacity', opacity)
-                    // If transparency is currently active, apply the new opacity immediately
-                    if (isTransparent) {
-                      mainWindow?.setOpacity(opacity)
-                    }
-                  }
-                }
-              })
-            }
-          ]
-        }
-      ]
-    }
-  ])
-  Menu.setApplicationMenu(menu)
+  setupMenu(
+    () => mainWindow,
+    () => isTransparent,
+    (value) => (isTransparent = value),
+    () => opacity,
+    (value) => (opacity = value)
+  )
 
   createWindow()
 
