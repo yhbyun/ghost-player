@@ -139,6 +139,18 @@ export function setupMenu(
           ]
         }
       ]
+    },
+    {
+      role: 'help',
+      submenu: [
+        {
+          label: 'Toggle Developer Tools',
+          accelerator: 'CommandOrControl+Shift+I',
+          click: (): void => {
+            getMainWindow()?.webContents.toggleDevTools()
+          }
+        }
+      ]
     }
   ])
   Menu.setApplicationMenu(menu)
