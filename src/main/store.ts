@@ -17,6 +17,7 @@ export interface StoreType {
   transparencyMode: 'always' | 'mouseover' | 'mouseout'
   isSideDockEnabled: boolean
   sideDockVisibleWidth: number
+  openDevToolsOnStart: boolean
 }
 
 export const store = new Store<StoreType>({
@@ -58,6 +59,10 @@ export const store = new Store<StoreType>({
     sideDockVisibleWidth: {
       type: 'number',
       default: 100
+    },
+    openDevToolsOnStart: {
+      type: 'boolean',
+      default: false
     }
   }
 })

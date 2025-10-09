@@ -137,6 +137,15 @@ export function setupMenu(
               }))
             }
           ]
+        },
+        { type: 'separator' },
+        {
+          label: 'Open DevTools on Start',
+          type: 'checkbox',
+          checked: store.get('openDevToolsOnStart', false),
+          click: (menuItem): void => {
+            store.set('openDevToolsOnStart', menuItem.checked)
+          }
         }
       ]
     },
