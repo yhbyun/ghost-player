@@ -68,6 +68,17 @@ export function setupMenu(
               })
             }
           ]
+        },
+        {
+          label: 'Always on Top',
+          type: 'checkbox',
+          checked: store.get('isAlwaysOnTop', false),
+          click: (menuItem): void => {
+            const mainWindow = getMainWindow()
+            const isAlwaysOnTop = menuItem.checked
+            store.set('isAlwaysOnTop', isAlwaysOnTop)
+            mainWindow?.setAlwaysOnTop(isAlwaysOnTop)
+          }
         }
       ]
     }

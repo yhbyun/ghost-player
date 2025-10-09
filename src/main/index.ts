@@ -33,6 +33,8 @@ function createWindow(): void {
     }
   })
 
+  mainWindow.setAlwaysOnTop(store.get('isAlwaysOnTop', false))
+
   mainWindow.on('resize', () => {
     const { width, height } = mainWindow!.getBounds()
     store.set('windowBounds', { ...store.get('windowBounds'), width, height })

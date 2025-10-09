@@ -13,6 +13,7 @@ export interface StoreType {
   isTransparent: boolean
   opacity: number
   lastService: string
+  isAlwaysOnTop: boolean
 }
 
 export const store = new Store<StoreType>({
@@ -41,6 +42,10 @@ export const store = new Store<StoreType>({
     lastService: {
       type: 'string',
       default: 'Netflix'
+    },
+    isAlwaysOnTop: {
+      type: 'boolean',
+      default: false
     }
   }
 })
