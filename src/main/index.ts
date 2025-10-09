@@ -13,6 +13,16 @@ let opacity = 0.8 // Default opacity setting is 80%
 
 function createWindow(): void {
   const { width, height, x, y } = store.get('windowBounds')
+  const transparencyMode = store.get('transparencyMode')
+
+  let initialOpacity = 1.0
+  if (isTransparent) {
+    if (transparencyMode === 'mouseover') {
+      initialOpacity = 1.0
+    } else {
+      initialOpacity = opacity
+    }
+  }
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -24,7 +34,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     transparent: true,
     frame: false,
-    opacity: isTransparent ? opacity : 1.0,
+    opacity: initialOpacity,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -87,6 +97,17 @@ app.whenReady().then(() => {
   ipcMain.handle('get-initial-service', (): Service | undefined => {
     const lastServiceName = store.get('lastService')
     return services.find((s) => s.name === lastServiceName)
+  })
+
+  ipcMain.on('mouse-event', (_, event) => {
+    if (isTransparent) {
+      const mode = store.get('transparencyMode')
+      if (mode === 'mouseover') {
+        mainWindow?.setOpacity(event === 'enter' ? opacity : 1.0)
+      } else if (mode === 'mouseout') {
+        mainWindow?.setOpacity(event === 'enter' ? 1.0 : opacity)
+      }
+    }
   })
 
   ipcMain.on('drag-window', (_, { deltaX, deltaY }) => {

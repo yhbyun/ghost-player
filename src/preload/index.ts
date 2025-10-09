@@ -16,6 +16,9 @@ const api = {
     return () => {
       ipcRenderer.removeListener('change-service', handler)
     }
+  },
+  notifyMouseEvent: (event: 'enter' | 'leave'): void => {
+    ipcRenderer.send('mouse-event', event)
   }
 }
 

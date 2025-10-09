@@ -1,4 +1,4 @@
-import { Menu, BrowserWindow } from 'electron'
+import { Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron'
 import { services } from '../config/services'
 import { logger } from './logger'
 import { store } from './store'
@@ -61,12 +61,40 @@ export function setupMenu(
                     setOpacity(o)
                     store.set('opacity', o)
                     if (getIsTransparent()) {
-                      mainWindow?.setOpacity(o)
+                      const mode = store.get('transparencyMode')
+                      if (mode === 'always' || mode === 'mouseout') {
+                        mainWindow?.setOpacity(o)
+                      }
                     }
                   }
                 }
               })
-            }
+            },
+            { type: 'separator' },
+            ...(['Always', 'Mouse Over', 'Mouse Out'] as const).map(
+              (mode): MenuItemConstructorOptions => {
+                const modeValue = mode.toLowerCase().replace(' ', '') as
+                  | 'always'
+                  | 'mouseover'
+                  | 'mouseout'
+                return {
+                  label: mode,
+                  type: 'radio',
+                  checked: store.get('transparencyMode') === modeValue,
+                  click: (): void => {
+                    store.set('transparencyMode', modeValue)
+                    const mainWindow = getMainWindow()
+                    if (mainWindow && getIsTransparent()) {
+                      if (modeValue === 'mouseover') {
+                        mainWindow.setOpacity(1.0)
+                      } else {
+                        mainWindow.setOpacity(getOpacity())
+                      }
+                    }
+                  }
+                }
+              }
+            )
           ]
         },
         {

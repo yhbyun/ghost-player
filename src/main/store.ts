@@ -14,6 +14,7 @@ export interface StoreType {
   opacity: number
   lastService: string
   isAlwaysOnTop: boolean
+  transparencyMode: 'always' | 'mouseover' | 'mouseout'
 }
 
 export const store = new Store<StoreType>({
@@ -46,6 +47,11 @@ export const store = new Store<StoreType>({
     isAlwaysOnTop: {
       type: 'boolean',
       default: false
+    },
+    transparencyMode: {
+      type: 'string',
+      enum: ['always', 'mouseover', 'mouseout'],
+      default: 'always'
     }
   }
 })

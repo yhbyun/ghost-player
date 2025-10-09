@@ -78,8 +78,14 @@ function App(): React.JSX.Element {
       className={`relative h-screen p-2 ${
         isHovering ? 'bg-blue-900 cursor-move' : 'bg-black'
       } transition-colors`}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseEnter={() => {
+        setIsHovering(true)
+        window.api.notifyMouseEvent('enter')
+      }}
+      onMouseLeave={() => {
+        setIsHovering(false)
+        window.api.notifyMouseEvent('leave')
+      }}
       onMouseDown={handleMouseDown}
     >
       {isDragging && <div className="absolute inset-0 z-10" />}
