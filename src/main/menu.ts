@@ -16,6 +16,8 @@ export function setupMenu(
       label: 'Services',
       submenu: services.map((service) => ({
         label: service.name,
+        type: 'radio',
+        checked: store.get('lastService') === service.name,
         click: (): void => {
           const mainWindow = getMainWindow()
           logger.log('menu', 'change-service', service.name)
