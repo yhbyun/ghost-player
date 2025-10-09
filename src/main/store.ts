@@ -15,6 +15,8 @@ export interface StoreType {
   lastService: string
   isAlwaysOnTop: boolean
   transparencyMode: 'always' | 'mouseover' | 'mouseout'
+  isSideDockEnabled: boolean
+  sideDockVisibleWidth: number
 }
 
 export const store = new Store<StoreType>({
@@ -22,14 +24,10 @@ export const store = new Store<StoreType>({
     windowBounds: {
       type: 'object',
       properties: {
-        width: { type: 'number' },
-        height: { type: 'number' },
+        width: { type: 'number', default: 800 },
+        height: { type: 'number', default: 600 },
         x: { type: 'number' },
         y: { type: 'number' }
-      },
-      default: {
-        width: 900,
-        height: 670
       }
     },
     isTransparent: {
@@ -42,7 +40,7 @@ export const store = new Store<StoreType>({
     },
     lastService: {
       type: 'string',
-      default: 'Netflix'
+      default: 'YouTube'
     },
     isAlwaysOnTop: {
       type: 'boolean',
@@ -52,6 +50,14 @@ export const store = new Store<StoreType>({
       type: 'string',
       enum: ['always', 'mouseover', 'mouseout'],
       default: 'always'
+    },
+    isSideDockEnabled: {
+      type: 'boolean',
+      default: false
+    },
+    sideDockVisibleWidth: {
+      type: 'number',
+      default: 100
     }
   }
 })

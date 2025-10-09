@@ -6,12 +6,14 @@ import { logger } from './logger'
 import { services, Service } from '../config/services'
 import { store } from './store'
 import { setupMenu } from './menu'
+import { SideDock } from './SideDock'
 
 let mainWindow: BrowserWindow | null
 let isTransparent = false // Transparency is disabled by default
 let opacity = 0.8 // Default opacity setting is 80%
+let isSideDockEnabled = false
 
-function createWindow(): void {
+function createWindow(onReadyToShow: () => void): void {
   const { width, height, x, y } = store.get('windowBounds')
   const transparencyMode = store.get('transparencyMode')
 
@@ -51,12 +53,14 @@ function createWindow(): void {
   })
 
   mainWindow.on('move', () => {
+    if (isSideDockEnabled) return
     const { x, y } = mainWindow!.getBounds()
     store.set('windowBounds', { ...store.get('windowBounds'), x, y })
   })
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    onReadyToShow()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -80,6 +84,9 @@ function createWindow(): void {
 app.whenReady().then(() => {
   isTransparent = store.get('isTransparent')
   opacity = store.get('opacity')
+  isSideDockEnabled = store.get('isSideDockEnabled')
+
+  let sideDock: SideDock | null = null
 
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
@@ -99,7 +106,9 @@ app.whenReady().then(() => {
     return services.find((s) => s.name === lastServiceName)
   })
 
-  ipcMain.on('mouse-event', (_, event) => {
+  ipcMain.on('mouse-event', (_, event: 'enter' | 'leave') => {
+    logger.log('mouse-event', event)
+    // Transparency handler
     if (isTransparent) {
       const mode = store.get('transparencyMode')
       if (mode === 'mouseover') {
@@ -107,6 +116,13 @@ app.whenReady().then(() => {
       } else if (mode === 'mouseout') {
         mainWindow?.setOpacity(event === 'enter' ? 1.0 : opacity)
       }
+    }
+
+    // SideDock handler
+    if (event === 'enter') {
+      sideDock?.handleMouseEnter()
+    } else {
+      sideDock?.handleMouseLeave()
     }
   })
 
@@ -118,20 +134,42 @@ app.whenReady().then(() => {
     }
   })
 
+  createWindow(() => {
+    sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
+    if (isSideDockEnabled) {
+      sideDock.enable()
+    }
+  })
+
   setupMenu(
     () => mainWindow,
     () => isTransparent,
     (value) => (isTransparent = value),
     () => opacity,
-    (value) => (opacity = value)
+    (value) => (opacity = value),
+    (enabled) => {
+      isSideDockEnabled = enabled
+      if (enabled) {
+        sideDock?.enable()
+      } else {
+        sideDock?.disable()
+      }
+    },
+    (width) => {
+      sideDock?.setVisibleWidth(width)
+    }
   )
-
-  createWindow()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0)
+      createWindow(() => {
+        sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
+        if (isSideDockEnabled) {
+          sideDock.enable()
+        }
+      })
   })
 })
 

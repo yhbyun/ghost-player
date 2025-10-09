@@ -6,6 +6,7 @@
  */
 export const activeCategories: string[] = [
   'dragging',
-  'webview'
+  'webview',
+  'mouse-event'
   // Add other categories here to enable them, e.g., 'api', 'lifecycle'
 ]

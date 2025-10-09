@@ -8,7 +8,9 @@ export function setupMenu(
   getIsTransparent: () => boolean,
   setIsTransparent: (value: boolean) => void,
   getOpacity: () => number,
-  setOpacity: (value: number) => void
+  setOpacity: (value: number) => void,
+  onSideDockToggle: (enabled: boolean) => void,
+  onVisibleWidthChange: (width: number) => void
 ): void {
   const menu = Menu.buildFromTemplate([
     { role: 'appMenu' },
@@ -107,6 +109,34 @@ export function setupMenu(
             store.set('isAlwaysOnTop', isAlwaysOnTop)
             mainWindow?.setAlwaysOnTop(isAlwaysOnTop)
           }
+        },
+        {
+          label: 'Side Dock',
+          submenu: [
+            {
+              label: 'Enabled',
+              type: 'checkbox',
+              checked: store.get('isSideDockEnabled', false),
+              click: (menuItem): void => {
+                const isEnabled = menuItem.checked
+                store.set('isSideDockEnabled', isEnabled)
+                onSideDockToggle(isEnabled)
+              }
+            },
+            { type: 'separator' },
+            {
+              label: 'Visible Width',
+              submenu: [20, 50, 100, 150].map((w) => ({
+                label: `${w}px`,
+                type: 'radio',
+                checked: store.get('sideDockVisibleWidth') === w,
+                click: (): void => {
+                  store.set('sideDockVisibleWidth', w)
+                  onVisibleWidthChange(w)
+                }
+              }))
+            }
+          ]
         }
       ]
     }
