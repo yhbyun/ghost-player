@@ -58,7 +58,7 @@ function createWindow(onReadyToShow: () => void): void {
     store.set('windowBounds', { ...store.get('windowBounds'), x, y })
   })
 
-  mainWindow.on('ready-to-show', () => {
+  mainWindow.once('ready-to-show', () => {
     mainWindow?.show()
     onReadyToShow()
   })
