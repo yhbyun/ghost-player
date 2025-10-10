@@ -12,8 +12,8 @@ export function setupMenu(
   setOpacity: (value: number) => void,
   onSideDockToggle: (enabled: boolean) => void,
   onVisibleWidthChange: (width: number) => void
-): void {
-  const menu = Menu.buildFromTemplate([
+): Menu {
+  const menuTemplate: (MenuItemConstructorOptions | Electron.MenuItem)[] = [
     { role: 'appMenu' },
     {
       label: 'File',
@@ -130,7 +130,8 @@ export function setupMenu(
                     if (mainWindow && getIsTransparent()) {
                       if (modeValue === 'mouseover') {
                         mainWindow.setOpacity(1.0)
-                      } else {
+                      }
+                      else {
                         mainWindow.setOpacity(getOpacity())
                       }
                     }
@@ -155,13 +156,12 @@ export function setupMenu(
           label: 'Side Dock',
           submenu: [
             {
+              id: 'side-dock-enabled',
               label: 'Enabled',
               type: 'checkbox',
               checked: store.get('isSideDockEnabled', false),
               click: (menuItem): void => {
-                const isEnabled = menuItem.checked
-                store.set('isSideDockEnabled', isEnabled)
-                onSideDockToggle(isEnabled)
+                onSideDockToggle(menuItem.checked)
               }
             },
             { type: 'separator' },
@@ -190,6 +190,8 @@ export function setupMenu(
         }
       ]
     }
-  ])
+  ]
+  const menu = Menu.buildFromTemplate(menuTemplate)
   Menu.setApplicationMenu(menu)
+  return menu
 }

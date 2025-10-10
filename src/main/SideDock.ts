@@ -17,6 +17,10 @@ export class SideDock {
     this.visibleWidth = visibleWidth
   }
 
+  getIsEnabled(): boolean {
+    return this.isEnabled
+  }
+
   setVisibleWidth(width: number): void {
     this.visibleWidth = width
     if (this.isEnabled && this.isDocked) {
@@ -49,6 +53,14 @@ export class SideDock {
 
   handleMouseLeave(): void {
     if (this.isEnabled && !this.isAnimating) {
+      this.dock()
+    }
+  }
+
+  toggleDocking(): void {
+    if (this.isDocked) {
+      this.undock()
+    } else {
       this.dock()
     }
   }

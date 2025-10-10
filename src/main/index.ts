@@ -7,6 +7,7 @@ import { services, Service } from '../config/services'
 import { store } from './store'
 import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
+import { ShortcutManager } from './shortcuts'
 
 let mainWindow: BrowserWindow | null
 let isTransparent = false // Transparency is disabled by default
@@ -141,31 +142,47 @@ app.whenReady().then(() => {
     }
   })
 
+  let shortcutManager: ShortcutManager | null = null
+
+  const onSideDockToggle = (enabled: boolean): void => {
+    isSideDockEnabled = enabled
+    store.set('isSideDockEnabled', enabled)
+    if (sideDockEnabledMenuItem) {
+      sideDockEnabledMenuItem.checked = enabled
+    }
+    if (enabled) {
+      sideDock?.enable()
+    } else {
+      sideDock?.disable()
+    }
+  }
+
   createWindow(() => {
     sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
     if (isSideDockEnabled) {
       sideDock.enable()
     }
+
+    shortcutManager = new ShortcutManager(sideDock!, onSideDockToggle)
+    shortcutManager.registerShortcuts()
+
+    app.on('will-quit', () => {
+      shortcutManager?.unregisterAll()
+    })
   })
 
-  setupMenu(
+  const menu = setupMenu(
     () => mainWindow,
     () => isTransparent,
     (value) => (isTransparent = value),
     () => opacity,
     (value) => (opacity = value),
-    (enabled) => {
-      isSideDockEnabled = enabled
-      if (enabled) {
-        sideDock?.enable()
-      } else {
-        sideDock?.disable()
-      }
-    },
+    onSideDockToggle,
     (width) => {
       sideDock?.setVisibleWidth(width)
     }
   )
+  const sideDockEnabledMenuItem = menu.getMenuItemById('side-dock-enabled')
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
