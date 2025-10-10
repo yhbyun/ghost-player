@@ -29,6 +29,12 @@ export function setupMenu(
       }))
     },
     {
+      role: 'viewMenu'
+    },
+    {
+      role: 'windowMenu'
+    },
+    {
       label: 'Settings',
       submenu: [
         {
@@ -145,18 +151,6 @@ export function setupMenu(
           checked: store.get('openDevToolsOnStart', false),
           click: (menuItem): void => {
             store.set('openDevToolsOnStart', menuItem.checked)
-          }
-        }
-      ]
-    },
-    {
-      role: 'help',
-      submenu: [
-        {
-          label: 'Toggle Developer Tools',
-          accelerator: 'CommandOrControl+Shift+I',
-          click: (): void => {
-            getMainWindow()?.webContents.toggleDevTools()
           }
         }
       ]
