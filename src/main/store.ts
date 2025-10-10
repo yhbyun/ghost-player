@@ -18,6 +18,9 @@ export interface StoreType {
   isSideDockEnabled: boolean
   sideDockVisibleWidth: number
   openDevToolsOnStart: boolean
+  shortcuts: {
+    toggleSideDock: string
+  }
 }
 
 export const store = new Store<StoreType>({
@@ -67,6 +70,18 @@ export const store = new Store<StoreType>({
     openDevToolsOnStart: {
       type: 'boolean',
       default: false
+    },
+    shortcuts: {
+      type: 'object',
+      properties: {
+        toggleSideDock: {
+          type: 'string',
+          default: 'F5'
+        }
+      },
+      default: {
+        toggleSideDock: 'F5'
+      }
     }
   }
 })

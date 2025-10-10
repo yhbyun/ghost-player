@@ -163,7 +163,11 @@ app.whenReady().then(() => {
       sideDock.enable()
     }
 
-    shortcutManager = new ShortcutManager(sideDock!, onSideDockToggle)
+    shortcutManager = new ShortcutManager(
+      sideDock!,
+      onSideDockToggle,
+      store.get('shortcuts.toggleSideDock')
+    )
     shortcutManager.registerShortcuts()
 
     app.on('will-quit', () => {
