@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { Service } from '../../../config/services'
 import { logger } from '../logger'
 
@@ -6,9 +6,28 @@ interface PlayerProps {
   service: Service
 }
 
-const Player: React.FC<PlayerProps> = ({ service }) => {
-  const webviewRef = useRef<HTMLWebViewElement>(null)
+interface WebViewElement extends HTMLWebViewElement {
+  goBack: () => void
+  reload: () => void
+}
+
+export interface PlayerRef {
+  goBack: () => void
+  reload: () => void
+}
+
+const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
+  const webviewRef = useRef<WebViewElement>(null)
   const [loading, setLoading] = useState(true)
+
+  useImperativeHandle(ref, () => ({
+    goBack: () => {
+      webviewRef.current?.goBack()
+    },
+    reload: () => {
+      webviewRef.current?.reload()
+    }
+  }))
 
   useEffect(() => {
     const webview = webviewRef.current
@@ -64,6 +83,8 @@ const Player: React.FC<PlayerProps> = ({ service }) => {
       />
     </>
   )
-}
+})
+
+Player.displayName = 'Player'
 
 export default Player

@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react'
 import { logger } from './logger'
-import Player from './components/Player'
-import { Service } from '../../config/services'
+import Player, { PlayerRef } from './components/Player'
+import RadialMenu from './components/RadialMenu'
+import { Service, services } from '../../config/services'
 
 function App(): React.JSX.Element {
   const [service, setService] = useState<Service | undefined>(undefined)
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isContextHovering, setIsContextHovering] = useState(false)
+  const playerRef = useRef<PlayerRef>(null)
 
   useEffect(() => {
     const fetchInitialService = async (): Promise<void> => {
@@ -69,6 +72,21 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  const handleServiceChange = (serviceName: string): void => {
+    const newService = services.find((s) => s.name === serviceName)
+    if (newService) {
+      setService(newService)
+    }
+  }
+
+  const handleHistoryBack = (): void => {
+    playerRef.current?.goBack()
+  }
+
+  const handleReload = (): void => {
+    playerRef.current?.reload()
+  }
+
   if (!service) {
     return null // Or a loading spinner
   }
@@ -91,11 +109,25 @@ function App(): React.JSX.Element {
       {isDragging && <div className="absolute inset-0 z-10" />}
       {/* Non-draggable content area */}
       <div
-        className="w-full h-full rounded-lg overflow-hidden"
-        onMouseEnter={() => setIsHovering(false)}
-        onMouseLeave={() => setIsHovering(true)}
+        className={`w-full h-full rounded-lg overflow-hidden ${isContextHovering ? 'hovering' : ''}`}
+        onMouseEnter={() => {
+          setIsHovering(false)
+          setIsContextHovering(true)
+        }}
+        onMouseLeave={() => {
+          setIsHovering(true)
+          setIsContextHovering(false)
+        }}
       >
-        <Player key={service.name} service={service} />
+        <Player ref={playerRef} key={service.name} service={service} />
+        <div className="absolute left-2 bottom-2">
+          <RadialMenu
+            reset={false}
+            onServiceChange={handleServiceChange}
+            onHistoryBack={handleHistoryBack}
+            onReload={handleReload}
+          />
+        </div>
       </div>
     </div>
   )
