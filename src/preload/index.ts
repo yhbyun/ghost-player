@@ -17,6 +17,13 @@ const api = {
       ipcRenderer.removeListener('change-service', handler)
     }
   },
+  onOpenLocation: (callback: (url: string) => void): (() => void) => {
+    const handler = (_event, url): void => callback(url)
+    ipcRenderer.on('open-location', handler)
+    return () => {
+      ipcRenderer.removeListener('open-location', handler)
+    }
+  },
   notifyMouseEvent: (event: 'enter' | 'leave'): void => {
     ipcRenderer.send('mouse-event', event)
   }

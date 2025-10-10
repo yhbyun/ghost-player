@@ -8,6 +8,7 @@ declare global {
       dragWindow: (deltaX: number, deltaY: number) => void
       getInitialService: () => Promise<Service | undefined>
       onChangeService: (callback: (service: Service) => void) => () => void
+      onOpenLocation: (callback: (url: string) => void) => () => void
       notifyMouseEvent: (event: 'enter' | 'leave') => void
     }
   }

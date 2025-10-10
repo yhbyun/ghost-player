@@ -2,10 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 import { logger } from './logger'
 import Player, { PlayerRef } from './components/Player'
 import RadialMenu from './components/RadialMenu'
+import VideoPlayer from './components/VideoPlayer'
 import { Service, services } from '../../config/services'
 
+type ContentSource = { type: 'service'; data: Service } | { type: 'video'; data: { src: string } }
+
 function App(): React.JSX.Element {
-  const [service, setService] = useState<Service | undefined>(undefined)
+  const [content, setContent] = useState<ContentSource | undefined>(undefined)
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isContextHovering, setIsContextHovering] = useState(false)
@@ -14,15 +17,24 @@ function App(): React.JSX.Element {
   useEffect(() => {
     const fetchInitialService = async (): Promise<void> => {
       const initialService = await window.api.getInitialService()
-      setService(initialService)
+      if (initialService) {
+        setContent({ type: 'service', data: initialService })
+      }
     }
     fetchInitialService()
 
-    const cleanup = window.api.onChangeService((newService) => {
-      setService(newService)
+    const cleanupOnChangeService = window.api.onChangeService((newService) => {
+      setContent({ type: 'service', data: newService })
     })
 
-    return cleanup
+    const cleanupOnOpenLocation = window.api.onOpenLocation((url) => {
+      setContent({ type: 'video', data: { src: url } })
+    })
+
+    return () => {
+      cleanupOnChangeService()
+      cleanupOnOpenLocation()
+    }
   }, [])
 
   const dragRef = useRef({
@@ -75,20 +87,39 @@ function App(): React.JSX.Element {
   const handleServiceChange = (serviceName: string): void => {
     const newService = services.find((s) => s.name === serviceName)
     if (newService) {
-      setService(newService)
+      setContent({ type: 'service', data: newService })
     }
   }
 
   const handleHistoryBack = (): void => {
-    playerRef.current?.goBack()
+    if (content?.type === 'service') {
+      playerRef.current?.goBack()
+    }
   }
 
   const handleReload = (): void => {
-    playerRef.current?.reload()
+    if (content?.type === 'service') {
+      playerRef.current?.reload()
+    }
   }
 
-  if (!service) {
-    return null // Or a loading spinner
+  const renderContent = (): React.JSX.Element | null => {
+    if (!content) {
+      return null
+    }
+
+    if (content.type === 'service') {
+      return <Player ref={playerRef} key={content.data.name} service={content.data} />
+    }
+
+    if (content.type === 'video') {
+      // A simple way to guess the video type.
+      // A more robust solution might be needed for production.
+      const type = content.data.src.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
+      return <VideoPlayer src={content.data.src} type={type} />
+    }
+
+    return null
   }
 
   return (
@@ -119,7 +150,7 @@ function App(): React.JSX.Element {
           setIsContextHovering(false)
         }}
       >
-        <Player ref={playerRef} key={service.name} service={service} />
+        {renderContent()}
         <div className="absolute left-2 bottom-2">
           <RadialMenu
             reset={false}

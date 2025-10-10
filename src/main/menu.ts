@@ -1,4 +1,5 @@
 import { Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron'
+import prompt from 'electron-prompt'
 import { services } from '../config/services'
 import { logger } from './logger'
 import { store } from './store'
@@ -15,6 +16,37 @@ export function setupMenu(
   const menu = Menu.buildFromTemplate([
     { role: 'appMenu' },
     {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open Location...',
+          accelerator: 'CommandOrControl+L',
+          click: () => {
+            const mainWindow = getMainWindow()
+            if (!mainWindow) return
+
+            prompt({
+              title: 'Open Location',
+              label: 'Enter URL:',
+              inputAttrs: {
+                type: 'url',
+                placeholder: 'https://example.com/video.mp4'
+              },
+              type: 'input'
+            })
+              .then((value: string | null) => {
+                if (value) {
+                  mainWindow.webContents.send('open-location', value)
+                }
+              })
+              .catch(console.error)
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
       label: 'Services',
       submenu: services.map((service) => ({
         label: service.name,
@@ -27,6 +59,9 @@ export function setupMenu(
           mainWindow?.webContents.send('change-service', service)
         }
       }))
+    },
+    {
+      role: 'editMenu'
     },
     {
       role: 'viewMenu'
