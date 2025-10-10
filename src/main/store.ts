@@ -29,6 +29,10 @@ export const store = new Store<StoreType>({
         height: { type: 'number', default: 600 },
         x: { type: 'number' },
         y: { type: 'number' }
+      },
+      default: {
+        width: 800,
+        height: 600
       }
     },
     isTransparent: {
