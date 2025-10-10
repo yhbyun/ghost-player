@@ -13,6 +13,10 @@ let isTransparent = false // Transparency is disabled by default
 let opacity = 0.8 // Default opacity setting is 80%
 let isSideDockEnabled = false
 
+if (is.dev) {
+  console.log('store path:' + store.path)
+}
+
 function createWindow(onReadyToShow: () => void): void {
   const { width, height, x, y } = store.get('windowBounds')
   const transparencyMode = store.get('transparencyMode')
