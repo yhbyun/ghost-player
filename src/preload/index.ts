@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Service } from '../config/services'
+import { PlayParams } from '../types'
 
 // Custom APIs for renderer
 const api = {
@@ -22,6 +23,13 @@ const api = {
     ipcRenderer.on('open-location', handler)
     return () => {
       ipcRenderer.removeListener('open-location', handler)
+    }
+  },
+  onOpenFile: (callback: (playParams: PlayParams) => void): (() => void) => {
+    const handler = (_event, playParams): void => callback(playParams)
+    ipcRenderer.on('open-file', handler)
+    return () => {
+      ipcRenderer.removeListener('open-file', handler)
     }
   },
   notifyMouseEvent: (event: 'enter' | 'leave'): void => {

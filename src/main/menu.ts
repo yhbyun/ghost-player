@@ -1,8 +1,9 @@
-import { Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron'
+import { Menu, BrowserWindow, MenuItemConstructorOptions, dialog } from 'electron'
 import prompt from 'electron-prompt'
 import { services } from '../config/services'
 import { logger } from './logger'
 import { store } from './store'
+import { playVideo } from './video/video-playback'
 
 export function setupMenu(
   getMainWindow: () => BrowserWindow | null,
@@ -18,6 +19,28 @@ export function setupMenu(
     {
       label: 'File',
       submenu: [
+        {
+          label: 'Open File...',
+          accelerator: 'CommandOrControl+O',
+          click: () => {
+            const mainWindow = getMainWindow()
+            if (!mainWindow) return
+
+            dialog
+              .showOpenDialog(mainWindow, {
+                properties: ['openFile']
+              })
+              .then((result) => {
+                if (!result.canceled && result.filePaths.length > 0) {
+                  playVideo(mainWindow, result.filePaths[0])
+                }
+              })
+              .catch((err) => {
+                logger.error('Error opening file dialog', err)
+              })
+          }
+        },
+        { type: 'separator' },
         {
           label: 'Open Location...',
           accelerator: 'CommandOrControl+L',
@@ -130,8 +153,7 @@ export function setupMenu(
                     if (mainWindow && getIsTransparent()) {
                       if (modeValue === 'mouseover') {
                         mainWindow.setOpacity(1.0)
-                      }
-                      else {
+                      } else {
                         mainWindow.setOpacity(getOpacity())
                       }
                     }

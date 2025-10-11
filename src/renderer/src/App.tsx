@@ -4,8 +4,9 @@ import Player, { PlayerRef } from './components/Player'
 import RadialMenu from './components/RadialMenu'
 import VideoPlayer from './components/VideoPlayer'
 import { Service, services } from '../../config/services'
+import { PlayParams } from '../../types'
 
-type ContentSource = { type: 'service'; data: Service } | { type: 'video'; data: { src: string } }
+type ContentSource = { type: 'service'; data: Service } | { type: 'video'; data: PlayParams }
 
 function App(): React.JSX.Element {
   const [content, setContent] = useState<ContentSource | undefined>(undefined)
@@ -28,12 +29,18 @@ function App(): React.JSX.Element {
     })
 
     const cleanupOnOpenLocation = window.api.onOpenLocation((url) => {
-      setContent({ type: 'video', data: { src: url } })
+      setContent({ type: 'video', data: { type: 'native', videoSource: url } })
+    })
+
+    const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
+      console.log('cleanupOnOpenFile', playParams)
+      setContent({ type: 'video', data: playParams })
     })
 
     return () => {
       cleanupOnChangeService()
       cleanupOnOpenLocation()
+      cleanupOnOpenFile()
     }
   }, [])
 
@@ -113,10 +120,10 @@ function App(): React.JSX.Element {
     }
 
     if (content.type === 'video') {
-      // A simple way to guess the video type.
-      // A more robust solution might be needed for production.
-      const type = content.data.src.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
-      return <VideoPlayer src={content.data.src} type={type} />
+      const { videoSource, type } = content.data
+      const mimeType =
+        type === 'stream' || videoSource.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
+      return <VideoPlayer src={videoSource} type={mimeType} />
     }
 
     return null

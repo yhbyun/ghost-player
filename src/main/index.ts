@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
@@ -89,6 +90,19 @@ function createWindow(onReadyToShow: () => void): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local-video',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+      stream: true
+    }
+  }
+])
+
 app.whenReady().then(() => {
   isTransparent = store.get('isTransparent')
   opacity = store.get('opacity')
@@ -106,8 +120,18 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  protocol.handle('local-video', async (request) => {
+    const filePath = request.url.slice('local-video:'.length)
+    const decodedPath = decodeURIComponent(filePath)
+    const fileUrl = pathToFileURL(decodedPath).href
+    try {
+      logger.log('video', `Fetching local video from URL: ${fileUrl}`)
+      return await net.fetch(fileUrl)
+    } catch (error) {
+      logger.error('video', `Failed to fetch local video at path: ${fileUrl}`, error)
+      return new Response('Not Found', { status: 404 })
+    }
+  })
 
   ipcMain.handle('get-initial-service', (): Service | undefined => {
     const lastServiceName = store.get('lastService')
