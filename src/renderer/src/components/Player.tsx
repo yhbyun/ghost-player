@@ -55,16 +55,24 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
       // }
     }
 
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        webview.sendInputEvent({ type: 'keyDown', keyCode: e.key })
+      }
+    }
+
     webview.addEventListener('did-start-loading', handleStartLoading)
     webview.addEventListener('did-stop-loading', handleStopLoading)
     webview.addEventListener('did-finish-load', handleFinishLoad)
     webview.addEventListener('dom-ready', handleDomReady)
+    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
       webview.removeEventListener('did-start-loading', handleStartLoading)
       webview.removeEventListener('did-stop-loading', handleStopLoading)
       webview.removeEventListener('did-finish-load', handleFinishLoad)
       webview.removeEventListener('dom-ready', handleDomReady)
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [service])
 
