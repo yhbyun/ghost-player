@@ -52,7 +52,7 @@ export const playVideo = (mainWindow: BrowserWindow, videoFile: string): void =>
     .then((checkResult) => {
       if (checkResult.videoCodecSupport && checkResult.audioCodecSupport) {
         if (httpServer) {
-          httpServer.killFfmpegCommand()
+          httpServer.closeServer()
           httpServer = undefined
         }
         const playParams: PlayParams = {
@@ -70,16 +70,17 @@ export const playVideo = (mainWindow: BrowserWindow, videoFile: string): void =>
           checkResult: checkResult
         }
 
-        httpServer.createServer()
-        console.log('createVideoServer success')
+        httpServer.createServer(() => {
+          console.log('createVideoServer success')
 
-        const playParams: PlayParams = {
-          type: 'stream',
-          videoSource: 'http://127.0.0.1:8888?startTime=0',
-          duration: checkResult.duration
-        }
-        console.log(playParams)
-        mainWindow?.webContents.send('open-file', playParams)
+          const playParams: PlayParams = {
+            type: 'stream',
+            videoSource: 'http://127.0.0.1:8888/stream.m3u8?startTime=0',
+            duration: checkResult.duration
+          }
+          console.log(playParams)
+          mainWindow?.webContents.send('open-file', playParams)
+        })
       }
     })
     .catch((err: Error) => {

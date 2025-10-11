@@ -35,6 +35,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type }) => {
         },
         () => {
           console.log('player is ready')
+          playerRef.current?.on('error', () => {
+            const error = playerRef.current?.error()
+            console.error('Video.js Error:', error)
+          })
         }
       )
     } else {
