@@ -1,4 +1,5 @@
 import http from 'http'
+import { URL } from 'url'
 import { logger } from '../logger'
 import ffmpeg from 'fluent-ffmpeg'
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
@@ -69,6 +70,19 @@ export default class VideoServer {
             return
           }
 
+          // Parse startTime from the request URL for seeking
+          const requestUrl = new URL(request.url, `http://${request.headers.host}`)
+          const startTimeStr = requestUrl.searchParams.get('startTime')
+          const startTime = startTimeStr ? parseInt(startTimeStr, 10) : 0
+
+          if (isNaN(startTime)) {
+            response.statusCode = 400
+            response.end('Invalid startTime parameter.')
+            return
+          }
+
+          logger.log('video', `Request received for video stream, startTime: ${startTime}s`)
+
           const videoPath = this.videoSourceInfo.videoSourcePath
           const videoCodec = this.videoSourceInfo.checkResult.videoCodecSupport
             ? 'copy'
@@ -86,6 +100,7 @@ export default class VideoServer {
           this.killFfmpegCommand()
 
           this._ffmpegCommand = ffmpeg(videoPath)
+            .seekInput(startTime)
             .videoCodec(videoCodec)
             .audioCodec(audioCodec)
             .format('mp4')
