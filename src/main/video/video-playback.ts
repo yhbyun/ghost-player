@@ -75,7 +75,7 @@ export const playVideo = (mainWindow: BrowserWindow, videoFile: string): void =>
 
           const playParams: PlayParams = {
             type: 'stream',
-            videoSource: 'http://127.0.0.1:8888/stream.m3u8?startTime=0',
+            videoSource: 'http://127.0.0.1:8888/video.mp4',
             duration: checkResult.duration
           }
           console.log(playParams)

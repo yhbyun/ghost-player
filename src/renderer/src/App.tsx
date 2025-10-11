@@ -120,10 +120,11 @@ function App(): React.JSX.Element {
     }
 
     if (content.type === 'video') {
-      const { videoSource, type } = content.data
-      const mimeType =
-        type === 'stream' || videoSource.endsWith('.m3u8') ? 'application/x-mpegURL' : 'video/mp4'
-      return <VideoPlayer src={videoSource} type={mimeType} />
+      const { videoSource, duration } = content.data
+      const mimeType = content.data.videoSource.endsWith('.m3u8')
+        ? 'application/x-mpegURL'
+        : 'video/mp4'
+      return <VideoPlayer src={videoSource} type={mimeType} duration={duration} />
     }
 
     return null
