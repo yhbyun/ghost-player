@@ -21,6 +21,7 @@ export interface StoreType {
   shortcuts: {
     toggleSideDock: string
   }
+  disableMouse: boolean
 }
 
 export const store = new Store<StoreType>({
@@ -82,6 +83,10 @@ export const store = new Store<StoreType>({
       default: {
         toggleSideDock: 'F5'
       }
+    },
+    disableMouse: {
+      type: 'boolean',
+      default: false
     }
   }
 })

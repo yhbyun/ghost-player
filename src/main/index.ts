@@ -53,6 +53,10 @@ function createWindow(onReadyToShow: () => void): void {
 
   mainWindow.setAlwaysOnTop(store.get('isAlwaysOnTop', false))
 
+  if (store.get('disableMouse')) {
+    mainWindow.setIgnoreMouseEvents(true)
+  }
+
   mainWindow.on('resize', () => {
     const { width, height } = mainWindow!.getBounds()
     store.set('windowBounds', { ...store.get('windowBounds'), width, height })

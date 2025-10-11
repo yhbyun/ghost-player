@@ -201,6 +201,16 @@ export function setupMenu(
             }
           ]
         },
+        {
+          label: 'Disable Mouse',
+          type: 'checkbox',
+          checked: store.get('disableMouse', false),
+          click: (menuItem): void => {
+            const mainWindow = getMainWindow()
+            store.set('disableMouse', menuItem.checked)
+            mainWindow?.setIgnoreMouseEvents(menuItem.checked)
+          }
+        },
         { type: 'separator' },
         {
           label: 'Open DevTools on Start',
