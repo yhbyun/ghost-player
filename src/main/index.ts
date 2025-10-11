@@ -1,6 +1,7 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, net } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
 import { join } from 'path'
-import { pathToFileURL } from 'url'
+import { promises as fs } from 'fs'
+import { createReadStream } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
@@ -125,14 +126,39 @@ app.whenReady().then(() => {
   })
 
   protocol.handle('local-video', async (request) => {
-    const filePath = request.url.slice('local-video:'.length)
-    const decodedPath = decodeURIComponent(filePath)
-    const fileUrl = pathToFileURL(decodedPath).href
+    const filePath = decodeURIComponent(request.url.slice('local-video:'.length))
+
     try {
-      logger.log('video', `Fetching local video from URL: ${fileUrl}`)
-      return await net.fetch(fileUrl)
+      const stat = await fs.stat(filePath)
+      const fileSize = stat.size
+      const range = request.headers.get('range')
+
+      if (range) {
+        logger.log('video', `Serving range request: ${range} for ${filePath}`)
+        const parts = range.replace(/bytes=/, '').split('-')
+        const start = parseInt(parts[0], 10)
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
+        const chunksize = end - start + 1
+        const file = createReadStream(filePath, { start, end })
+        const headers = {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunksize.toString(),
+          'Content-Type': 'video/mp4'
+        }
+        return new Response(file, { status: 206, headers })
+      } else {
+        logger.log('video', `Serving full file: ${filePath}`)
+        const headers = {
+          'Content-Length': fileSize.toString(),
+          'Content-Type': 'video/mp4',
+          'Accept-Ranges': 'bytes'
+        }
+        const file = createReadStream(filePath)
+        return new Response(file, { status: 200, headers })
+      }
     } catch (error) {
-      logger.error('video', `Failed to fetch local video at path: ${fileUrl}`, error)
+      logger.error('video', `Failed to fetch local video at path: ${filePath}`, error)
       return new Response('Not Found', { status: 404 })
     }
   })
