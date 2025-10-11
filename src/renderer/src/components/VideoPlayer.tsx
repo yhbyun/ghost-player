@@ -15,6 +15,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
   const playerRef = useRef<Player | null>(null)
   const [seekIndicator, setSeekIndicator] = useState<'forward' | 'backward' | null>(null)
   const seekTimeoutRef = useRef<number | null>(null)
+  const [volume, setVolume] = useState(100)
+  const [showVolumeIndicator, setShowVolumeIndicator] = useState(false)
+  const volumeTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!videoRef.current) {
@@ -45,6 +48,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
       player.on('error', () => {
         console.error('Video.js Error:', player.error())
       })
+
+      // Set initial volume state
+      setVolume(Math.round(player.volume() * 100))
     })
 
     playerRef.current = player
@@ -66,10 +72,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
       } else if (e.key === 'ArrowRight') {
         player.currentTime(player.currentTime() + 5)
         showSeekIndicator('forward')
+      } else if (e.key === 'ArrowUp') {
+        player.volume(Math.min(1, player.volume() + 0.1))
+      } else if (e.key === 'ArrowDown') {
+        player.volume(Math.max(0, player.volume() - 0.1))
       }
     }
 
+    const handleVolumeChange = (): void => {
+      if (volumeTimeoutRef.current) {
+        clearTimeout(volumeTimeoutRef.current)
+      }
+
+      setVolume(Math.round(player.volume() * 100))
+      setShowVolumeIndicator(true)
+
+      volumeTimeoutRef.current = window.setTimeout(() => {
+        setShowVolumeIndicator(false)
+      }, 1500)
+    }
+
     window.addEventListener('keydown', handleKeyDown)
+    player.on('volumechange', handleVolumeChange)
 
     return () => {
       if (player && !player.isDisposed()) {
@@ -77,8 +101,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
         playerRef.current = null
       }
       window.removeEventListener('keydown', handleKeyDown)
+      player.off('volumechange', handleVolumeChange)
       if (seekTimeoutRef.current) {
         clearTimeout(seekTimeoutRef.current)
+      }
+      if (volumeTimeoutRef.current) {
+        clearTimeout(volumeTimeoutRef.current)
       }
     }
   }, [src, type, duration])
@@ -99,6 +127,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
               <span className="text-lg">+5 seconds</span>
             </>
           )}
+        </div>
+      )}
+      {showVolumeIndicator && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-60 text-white text-lg px-4 py-2 rounded-md">
+          Volume: {volume}%
         </div>
       )}
     </div>

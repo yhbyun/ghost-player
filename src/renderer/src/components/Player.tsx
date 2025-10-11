@@ -56,7 +56,12 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
     }
 
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      if (
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        e.key === 'ArrowUp' ||
+        e.key === 'ArrowDown'
+      ) {
         webview.sendInputEvent({ type: 'keyDown', keyCode: e.key })
       }
     }
