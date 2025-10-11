@@ -104,6 +104,10 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 app.whenReady().then(() => {
+  if (is.dev && process.platform === 'darwin') {
+    app.dock.setIcon(icon)
+  }
+
   isTransparent = store.get('isTransparent')
   opacity = store.get('opacity')
   isSideDockEnabled = store.get('isSideDockEnabled')
