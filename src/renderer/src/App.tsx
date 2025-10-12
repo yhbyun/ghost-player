@@ -148,7 +148,7 @@ function App(): React.JSX.Element {
       {isDragging && <div className="absolute inset-0 z-10" />}
       {/* Non-draggable content area */}
       <div
-        className={`w-full h-full rounded-lg overflow-hidden ${isContextHovering ? 'hovering' : ''}`}
+        className={`w-full h-full bg-black rounded-lg overflow-hidden ${isContextHovering ? 'hovering' : ''}`}
         onMouseEnter={() => {
           setIsHovering(false)
           setIsContextHovering(true)
