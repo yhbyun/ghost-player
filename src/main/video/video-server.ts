@@ -1,5 +1,6 @@
 import http from 'http'
 import { URL } from 'url'
+import fs from 'fs'
 import { logger } from '../logger'
 import ffmpeg from 'fluent-ffmpeg'
 import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
@@ -19,6 +20,7 @@ export default class VideoServer {
   private _videoSourceInfo: VideoSourceInfo | undefined
   private _ffmpegCommand: ffmpeg.FfmpegCommand | undefined
   private static _canUseHardwareAcceleration: boolean | null = null
+  public subtitlePath: string | undefined
 
   public set videoSourceInfo(info: VideoSourceInfo | undefined) {
     this._videoSourceInfo = info
@@ -70,8 +72,30 @@ export default class VideoServer {
             return
           }
 
-          // Parse startTime from the request URL for seeking
           const requestUrl = new URL(request.url, `http://${request.headers.host}`)
+
+          if (requestUrl.pathname === '/subtitle') {
+            if (this.subtitlePath) {
+              fs.readFile(this.subtitlePath, (err, data) => {
+                if (err) {
+                  response.statusCode = 500
+                  response.end('Error reading subtitle file.')
+                  return
+                }
+                response.writeHead(200, {
+                  'Content-Type': 'text/vtt',
+                  'Access-Control-Allow-Origin': '*'
+                })
+                response.end(data)
+              })
+            } else {
+              response.statusCode = 404
+              response.end('Subtitle not found.')
+            }
+            return
+          }
+
+          // Parse startTime from the request URL for seeking
           const startTimeStr = requestUrl.searchParams.get('startTime')
           const startTime = startTimeStr ? parseInt(startTimeStr, 10) : 0
 

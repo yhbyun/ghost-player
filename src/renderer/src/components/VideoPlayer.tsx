@@ -8,9 +8,10 @@ interface VideoPlayerProps {
   src: string
   type: string
   duration?: number
+  subtitleSrc?: string
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitleSrc }) => {
   const videoRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<Player | null>(null)
   const [seekIndicator, setSeekIndicator] = useState<'forward' | 'backward' | null>(null)
@@ -34,6 +35,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
       responsive: true,
       fluid: true,
       sources: [{ src, type: 'video/mp4' }]
+    }
+
+    if (subtitleSrc) {
+      options.tracks = [
+        {
+          src: subtitleSrc,
+          kind: 'subtitles',
+          srclang: 'en',
+          label: 'English',
+          default: true
+        }
+      ]
     }
 
     if (duration) {
@@ -109,7 +122,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration }) => {
         clearTimeout(volumeTimeoutRef.current)
       }
     }
-  }, [src, type, duration])
+  }, [src, type, duration, subtitleSrc])
 
   return (
     <div data-vjs-player className="relative flex items-center w-full h-full">

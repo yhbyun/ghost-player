@@ -8,7 +8,7 @@ import { store } from './store'
 import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
 import { ShortcutManager } from './shortcuts'
-import { registerLocalVideoProtocol } from './video/video-playback'
+import { registerLocalFileProtocols } from './video/video-playback'
 
 let mainWindow: BrowserWindow | null
 let isTransparent = false // Transparency is disabled by default
@@ -108,7 +108,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 app.whenReady().then(() => {
-  registerLocalVideoProtocol()
+  registerLocalFileProtocols()
 
   if (is.dev && process.platform === 'darwin') {
     app.dock.setIcon(icon)
