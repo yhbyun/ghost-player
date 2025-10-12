@@ -28,6 +28,7 @@ export interface StoreType {
   openDevToolsOnStart: boolean
   shortcuts: {
     toggleSideDock: string
+    disableSideDock: string
   }
   disableMouse: boolean
 }
@@ -99,10 +100,15 @@ export const store = new Store<StoreType>({
         toggleSideDock: {
           type: 'string',
           default: 'F5'
+        },
+        disableSideDock: {
+          type: 'string',
+          default: 'Option+F5'
         }
       },
       default: {
-        toggleSideDock: 'F5'
+        toggleSideDock: 'F5',
+        disableSideDock: 'Option+F5'
       }
     },
     disableMouse: {
