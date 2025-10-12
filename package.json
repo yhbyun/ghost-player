@@ -1,7 +1,8 @@
 {
-  "name": "youtube-viewer",
+  "name": "ghost-player",
+  "productName": "GhostPlayer",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "A transparent, floating video player for various streaming services and local files.",
   "main": "./out/main/index.js",
   "author": "example.com",
   "homepage": "https://electron-vite.org",
