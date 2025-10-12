@@ -14,6 +14,14 @@ export interface StoreType {
   opacity: number
   lastService: string
   isAlwaysOnTop: boolean
+  alwaysOnTopLevel:
+    | 'floating'
+    | 'torn-off-menu'
+    | 'modal-panel'
+    | 'main-menu'
+    | 'status'
+    | 'pop-up-menu'
+    | 'screen-saver'
   transparencyMode: 'always' | 'mouseover' | 'mouseout'
   isSideDockEnabled: boolean
   sideDockVisibleWidth: number
@@ -54,6 +62,19 @@ export const store = new Store<StoreType>({
     isAlwaysOnTop: {
       type: 'boolean',
       default: false
+    },
+    alwaysOnTopLevel: {
+      type: 'string',
+      enum: [
+        'floating',
+        'torn-off-menu',
+        'modal-panel',
+        'main-menu',
+        'status',
+        'pop-up-menu',
+        'screen-saver'
+      ],
+      default: 'floating'
     },
     transparencyMode: {
       type: 'string',

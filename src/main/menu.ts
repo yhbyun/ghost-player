@@ -165,14 +165,44 @@ export function setupMenu(
         },
         {
           label: 'Always on Top',
-          type: 'checkbox',
-          checked: store.get('isAlwaysOnTop', false),
-          click: (menuItem): void => {
-            const mainWindow = getMainWindow()
-            const isAlwaysOnTop = menuItem.checked
-            store.set('isAlwaysOnTop', isAlwaysOnTop)
-            mainWindow?.setAlwaysOnTop(isAlwaysOnTop)
-          }
+          submenu: [
+            {
+              label: 'Enabled',
+              type: 'checkbox',
+              checked: store.get('isAlwaysOnTop', false),
+              click: (menuItem): void => {
+                const mainWindow = getMainWindow()
+                const isAlwaysOnTop = menuItem.checked
+                store.set('isAlwaysOnTop', isAlwaysOnTop)
+                mainWindow?.setAlwaysOnTop(isAlwaysOnTop, store.get('alwaysOnTopLevel'))
+              }
+            },
+            {
+              label: 'Level',
+              submenu: (
+                [
+                  'floating',
+                  'torn-off-menu',
+                  'modal-panel',
+                  'main-menu',
+                  'status',
+                  'pop-up-menu',
+                  'screen-saver'
+                ] as const
+              ).map((level) => ({
+                label: level,
+                type: 'radio',
+                checked: store.get('alwaysOnTopLevel') === level,
+                click: (): void => {
+                  const mainWindow = getMainWindow()
+                  store.set('alwaysOnTopLevel', level)
+                  if (store.get('isAlwaysOnTop')) {
+                    mainWindow?.setAlwaysOnTop(true, level)
+                  }
+                }
+              }))
+            }
+          ]
         },
         {
           label: 'Side Dock',

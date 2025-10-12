@@ -51,7 +51,7 @@ function createWindow(onReadyToShow: () => void): void {
     }
   })
 
-  mainWindow.setAlwaysOnTop(store.get('isAlwaysOnTop', false))
+  mainWindow.setAlwaysOnTop(store.get('isAlwaysOnTop', false), store.get('alwaysOnTopLevel'))
 
   if (store.get('disableMouse')) {
     mainWindow.setIgnoreMouseEvents(true)
