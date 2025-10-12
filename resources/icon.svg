@@ -1,4 +1,15 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="256" cy="256" r="256" fill="#282C34"/>
-  <path d="M368.6 256L204.8 358.4V153.6L368.6 256Z" fill="#FF0000"/>
+<svg width="512" height="512" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <defs>
+    <linearGradient id="ghostGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F0F0F0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <!-- Ghost Body -->
+    <path d="M 15 95 C 15 65, 10 35, 35 25 C 45 20, 65 20, 75 35 C 80 50, 85 65, 85 95 L 75 85 L 65 95 L 55 85 L 45 95 L 35 85 L 25 95 Z" fill="url(#ghostGradient)" stroke="#33333d" stroke-width="3"/>
+    
+    <!-- Play Button -->
+    <path d="M 42 48 L 65 62 L 42 76 Z" fill="#33333d" />
+  </g>
 </svg>
