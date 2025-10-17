@@ -34,6 +34,12 @@ const api = {
   },
   notifyMouseEvent: (event: 'enter' | 'leave'): void => {
     ipcRenderer.send('mouse-event', event)
+  },
+  setSetting: (key: string, value: unknown): void => {
+    ipcRenderer.send('set-setting', { key, value })
+  },
+  getSetting: (key: string, defaultValue: unknown): Promise<unknown> => {
+    return ipcRenderer.invoke('get-setting', { key, defaultValue })
   }
 }
 

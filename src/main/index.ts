@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -11,9 +11,6 @@ import { ShortcutManager } from './shortcuts'
 import { registerLocalFileProtocols } from './video/video-playback'
 
 let mainWindow: BrowserWindow | null
-let isTransparent = false // Transparency is disabled by default
-let opacity = 0.8 // Default opacity setting is 80%
-let isSideDockEnabled = false
 
 if (is.dev) {
   console.log('store path:' + store.path)
@@ -21,7 +18,9 @@ if (is.dev) {
 
 function createWindow(onReadyToShow: () => void): void {
   const { width, height, x, y } = store.get('windowBounds')
+  const isTransparent = store.get('isTransparent')
   const transparencyMode = store.get('transparencyMode')
+  const opacity = store.get('opacity')
 
   let initialOpacity = 1.0
   if (isTransparent) {
@@ -63,7 +62,7 @@ function createWindow(onReadyToShow: () => void): void {
   })
 
   mainWindow.on('move', () => {
-    if (isSideDockEnabled) return
+    if (store.get('isSideDockEnabled')) return
     const { x, y } = mainWindow!.getBounds()
     store.set('windowBounds', { ...store.get('windowBounds'), x, y })
   })
@@ -114,10 +113,6 @@ app.whenReady().then(() => {
     app.dock.setIcon(icon)
   }
 
-  isTransparent = store.get('isTransparent')
-  opacity = store.get('opacity')
-  isSideDockEnabled = store.get('isSideDockEnabled')
-
   let sideDock: SideDock | null = null
 
   // Set app user model id for windows
@@ -138,12 +133,12 @@ app.whenReady().then(() => {
   ipcMain.on('mouse-event', (_, event: 'enter' | 'leave') => {
     logger.log('mouse-event', event)
     // Transparency handler
-    if (isTransparent) {
+    if (store.get('isTransparent')) {
       const mode = store.get('transparencyMode')
       if (mode === 'mouseover') {
-        mainWindow?.setOpacity(event === 'enter' ? opacity : 1.0)
+        mainWindow?.setOpacity(event === 'enter' ? store.get('opacity') : 1.0)
       } else if (mode === 'mouseout') {
-        mainWindow?.setOpacity(event === 'enter' ? 1.0 : opacity)
+        mainWindow?.setOpacity(event === 'enter' ? 1.0 : store.get('opacity'))
       }
     }
 
@@ -163,30 +158,103 @@ app.whenReady().then(() => {
     }
   })
 
-  let shortcutManager: ShortcutManager | null = null
+  ipcMain.handle('get-setting', (_, { key, defaultValue }) => {
+    return store.get(key, defaultValue)
+  })
 
-  const onSideDockToggle = (enabled: boolean): void => {
-    isSideDockEnabled = enabled
-    store.set('isSideDockEnabled', enabled)
-    if (sideDockEnabledMenuItem) {
-      sideDockEnabledMenuItem.checked = enabled
-    }
-    if (enabled) {
-      sideDock?.enable()
-    } else {
-      sideDock?.disable()
+  ipcMain.on('set-setting', (_, { key, value }) => {
+    store.set(key, value)
+  })
+
+  const applySetting = (key: string, value: any): void => {
+    const menu = Menu.getApplicationMenu()
+    if (!menu) return
+
+    switch (key) {
+      case 'isTransparent': {
+        mainWindow?.setOpacity(value ? store.get('opacity') : 1.0)
+        const menuItem = menu.getMenuItemById('transparency-enabled')
+        if (menuItem) menuItem.checked = value
+        break
+      }
+      case 'opacity': {
+        if (store.get('isTransparent')) {
+          mainWindow?.setOpacity(value)
+        }
+        const menuItem = menu.getMenuItemById(`transparency-opacity-${value * 100}`)
+        if (menuItem) menuItem.checked = true
+        break
+      }
+      case 'transparencyMode': {
+        if (store.get('isTransparent')) {
+          mainWindow?.setOpacity(value === 'mouseover' ? 1.0 : store.get('opacity'))
+        }
+        const menuItem = menu.getMenuItemById(`transparency-mode-${value}`)
+        if (menuItem) menuItem.checked = true
+        break
+      }
+      case 'isAlwaysOnTop': {
+        mainWindow?.setAlwaysOnTop(value, store.get('alwaysOnTopLevel'))
+        const menuItem = menu.getMenuItemById('always-on-top-enabled')
+        if (menuItem) menuItem.checked = value
+        break
+      }
+      case 'alwaysOnTopLevel': {
+        mainWindow?.setAlwaysOnTop(store.get('isAlwaysOnTop'), value)
+        const menuItem = menu.getMenuItemById(`always-on-top-level-${value}`)
+        if (menuItem) menuItem.checked = true
+        break
+      }
+      case 'isSideDockEnabled': {
+        if (value) {
+          sideDock?.enable()
+        } else {
+          sideDock?.disable()
+        }
+        const menuItem = menu.getMenuItemById('side-dock-enabled')
+        if (menuItem) menuItem.checked = value
+        break
+      }
+      case 'sideDockVisibleWidth': {
+        sideDock?.setVisibleWidth(value)
+        const menuItem = menu.getMenuItemById(`side-dock-visible-width-${value}`)
+        if (menuItem) menuItem.checked = true
+        break
+      }
+      case 'disableMouse': {
+        mainWindow?.setIgnoreMouseEvents(value)
+        const menuItem = menu.getMenuItemById('disable-mouse')
+        if (menuItem) menuItem.checked = value
+        break
+      }
+      case 'openDevToolsOnStart': {
+        const menuItem = menu.getMenuItemById('open-devtools-on-start')
+        if (menuItem) menuItem.checked = value
+        break
+      }
     }
   }
 
+  store.onDidAnyChange((newState, oldState) => {
+    if (!newState || !oldState) return
+    const changedKeys = Object.keys(newState).filter((key) => newState[key] !== oldState[key])
+    for (const key of changedKeys) {
+      // Ensure menu-driven changes are reflected. IPC-driven changes will re-apply, which is safe.
+      applySetting(key, newState[key])
+    }
+  })
+
+  let shortcutManager: ShortcutManager | null = null
+
   createWindow(() => {
     sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
-    if (isSideDockEnabled) {
+    if (store.get('isSideDockEnabled')) {
       sideDock.enable()
     }
 
     shortcutManager = new ShortcutManager(
       sideDock!,
-      onSideDockToggle,
+      () => store.set('isSideDockEnabled', true),
       store.get('shortcuts.toggleSideDock'),
       store.get('shortcuts.disableSideDock')
     )
@@ -197,18 +265,9 @@ app.whenReady().then(() => {
     })
   })
 
-  const menu = setupMenu(
-    () => mainWindow,
-    () => isTransparent,
-    (value) => (isTransparent = value),
-    () => opacity,
-    (value) => (opacity = value),
-    onSideDockToggle,
-    (width) => {
-      sideDock?.setVisibleWidth(width)
-    }
+  setupMenu(
+    () => mainWindow
   )
-  const sideDockEnabledMenuItem = menu.getMenuItemById('side-dock-enabled')
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -216,7 +275,7 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0)
       createWindow(() => {
         sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
-        if (isSideDockEnabled) {
+        if (store.get('isSideDockEnabled')) {
           sideDock.enable()
         }
       })

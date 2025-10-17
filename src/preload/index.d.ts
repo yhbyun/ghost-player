@@ -12,6 +12,8 @@ declare global {
       onOpenLocation: (callback: (url: string) => void) => () => void
       onOpenFile: (callback: (playParams: PlayParams) => void) => () => void
       notifyMouseEvent: (event: 'enter' | 'leave') => void
+      setSetting: (key: string, value: unknown) => void
+      getSetting: (key: string, defaultValue: unknown) => Promise<unknown>
     }
   }
 }

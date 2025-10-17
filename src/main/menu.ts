@@ -5,15 +5,7 @@ import { logger } from './logger'
 import { store } from './store'
 import { playVideo } from './video/video-playback'
 
-export function setupMenu(
-  getMainWindow: () => BrowserWindow | null,
-  getIsTransparent: () => boolean,
-  setIsTransparent: (value: boolean) => void,
-  getOpacity: () => number,
-  setOpacity: (value: number) => void,
-  onSideDockToggle: (enabled: boolean) => void,
-  onVisibleWidthChange: (width: number) => void
-): Menu {
+export function setupMenu(getMainWindow: () => BrowserWindow | null): Menu {
   const menuTemplate: (MenuItemConstructorOptions | Electron.MenuItem)[] = [
     { role: 'appMenu' },
     {
@@ -99,19 +91,12 @@ export function setupMenu(
           label: 'Transparency',
           submenu: [
             {
+              id: 'transparency-enabled',
               label: 'Enabled',
               type: 'checkbox',
-              checked: getIsTransparent(),
+              checked: store.get('isTransparent'),
               click: (menuItem): void => {
-                const mainWindow = getMainWindow()
-                const newIsTransparent = menuItem.checked
-                setIsTransparent(newIsTransparent)
-                store.set('isTransparent', newIsTransparent)
-                if (newIsTransparent) {
-                  mainWindow?.setOpacity(getOpacity())
-                } else {
-                  mainWindow?.setOpacity(1.0)
-                }
+                store.set('isTransparent', menuItem.checked)
               }
             },
             {
@@ -119,19 +104,12 @@ export function setupMenu(
               submenu: [10, 20, 30, 40, 50, 60, 70, 80, 90].map((p) => {
                 const o = p / 100
                 return {
+                  id: `transparency-opacity-${p}`,
                   label: `${p}%`,
                   type: 'radio',
-                  checked: getOpacity() === o,
+                  checked: store.get('opacity') === o,
                   click: (): void => {
-                    const mainWindow = getMainWindow()
-                    setOpacity(o)
                     store.set('opacity', o)
-                    if (getIsTransparent()) {
-                      const mode = store.get('transparencyMode')
-                      if (mode === 'always' || mode === 'mouseout') {
-                        mainWindow?.setOpacity(o)
-                      }
-                    }
                   }
                 }
               })
@@ -144,19 +122,12 @@ export function setupMenu(
                   | 'mouseover'
                   | 'mouseout'
                 return {
+                  id: `transparency-mode-${modeValue}`,
                   label: mode,
                   type: 'radio',
                   checked: store.get('transparencyMode') === modeValue,
                   click: (): void => {
                     store.set('transparencyMode', modeValue)
-                    const mainWindow = getMainWindow()
-                    if (mainWindow && getIsTransparent()) {
-                      if (modeValue === 'mouseover') {
-                        mainWindow.setOpacity(1.0)
-                      } else {
-                        mainWindow.setOpacity(getOpacity())
-                      }
-                    }
                   }
                 }
               }
@@ -167,14 +138,12 @@ export function setupMenu(
           label: 'Always on Top',
           submenu: [
             {
+              id: 'always-on-top-enabled',
               label: 'Enabled',
               type: 'checkbox',
               checked: store.get('isAlwaysOnTop', false),
               click: (menuItem): void => {
-                const mainWindow = getMainWindow()
-                const isAlwaysOnTop = menuItem.checked
-                store.set('isAlwaysOnTop', isAlwaysOnTop)
-                mainWindow?.setAlwaysOnTop(isAlwaysOnTop, store.get('alwaysOnTopLevel'))
+                store.set('isAlwaysOnTop', menuItem.checked)
               }
             },
             {
@@ -190,15 +159,12 @@ export function setupMenu(
                   'screen-saver'
                 ] as const
               ).map((level) => ({
+                id: `always-on-top-level-${level}`,
                 label: level,
                 type: 'radio',
                 checked: store.get('alwaysOnTopLevel') === level,
                 click: (): void => {
-                  const mainWindow = getMainWindow()
                   store.set('alwaysOnTopLevel', level)
-                  if (store.get('isAlwaysOnTop')) {
-                    mainWindow?.setAlwaysOnTop(true, level)
-                  }
                 }
               }))
             }
@@ -213,36 +179,36 @@ export function setupMenu(
               type: 'checkbox',
               checked: store.get('isSideDockEnabled', false),
               click: (menuItem): void => {
-                onSideDockToggle(menuItem.checked)
+                store.set('isSideDockEnabled', menuItem.checked)
               }
             },
             { type: 'separator' },
             {
               label: 'Visible Width',
               submenu: [20, 50, 100, 150].map((w) => ({
+                id: `side-dock-visible-width-${w}`,
                 label: `${w}px`,
                 type: 'radio',
                 checked: store.get('sideDockVisibleWidth') === w,
                 click: (): void => {
                   store.set('sideDockVisibleWidth', w)
-                  onVisibleWidthChange(w)
                 }
               }))
             }
           ]
         },
         {
+          id: 'disable-mouse',
           label: 'Disable Mouse',
           type: 'checkbox',
           checked: store.get('disableMouse', false),
           click: (menuItem): void => {
-            const mainWindow = getMainWindow()
             store.set('disableMouse', menuItem.checked)
-            mainWindow?.setIgnoreMouseEvents(menuItem.checked)
           }
         },
         { type: 'separator' },
         {
+          id: 'open-devtools-on-start',
           label: 'Open DevTools on Start',
           type: 'checkbox',
           checked: store.get('openDevToolsOnStart', false),

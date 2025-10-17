@@ -34,6 +34,7 @@ export interface StoreType {
 }
 
 export const store = new Store<StoreType>({
+  watch: true,
   schema: {
     windowBounds: {
       type: 'object',
