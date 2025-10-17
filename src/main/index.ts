@@ -239,8 +239,9 @@ app.whenReady().then(() => {
     if (!newState || !oldState) return
     const changedKeys = Object.keys(newState).filter((key) => newState[key] !== oldState[key])
     for (const key of changedKeys) {
-      // Ensure menu-driven changes are reflected. IPC-driven changes will re-apply, which is safe.
-      applySetting(key, newState[key])
+      const newValue = newState[key]
+      applySetting(key, newValue)
+      mainWindow?.webContents.send('setting-changed', { key, value: newValue })
     }
   })
 

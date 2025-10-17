@@ -40,6 +40,13 @@ const api = {
   },
   getSetting: (key: string, defaultValue: unknown): Promise<unknown> => {
     return ipcRenderer.invoke('get-setting', { key, defaultValue })
+  },
+  onSettingChanged: (callback: (args: { key: string; value: any }) => void): (() => void) => {
+    const handler = (_event, args): void => callback(args)
+    ipcRenderer.on('setting-changed', handler)
+    return () => {
+      ipcRenderer.removeListener('setting-changed', handler)
+    }
   }
 }
 

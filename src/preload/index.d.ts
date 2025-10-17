@@ -14,6 +14,6 @@ declare global {
       notifyMouseEvent: (event: 'enter' | 'leave') => void
       setSetting: (key: string, value: unknown) => void
       getSetting: (key: string, defaultValue: unknown) => Promise<unknown>
+      onSettingChanged: (callback: (args: { key: string; value: any }) => void) => () => void
     }
-  }
-}
+  }}

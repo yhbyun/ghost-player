@@ -56,6 +56,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ expanded, onToggle }) => {
       } as Settings)
     }
     fetchSettings()
+
+    const cleanup = window.api.onSettingChanged(({ key, value }) => {
+      setSettings((prev) => (prev ? { ...prev, [key]: value } : null))
+    })
+
+    return cleanup
   }, [])
 
   const handleSettingChange = (key: keyof Settings, value: unknown): void => {
