@@ -185,7 +185,7 @@ export function setupMenu(getMainWindow: () => BrowserWindow | null): Menu {
             { type: 'separator' },
             {
               label: 'Visible Width',
-              submenu: [20, 50, 100, 150].map((w) => ({
+              submenu: [20, 50, 100, 150, 200].map((w) => ({
                 id: `side-dock-visible-width-${w}`,
                 label: `${w}px`,
                 type: 'radio',

@@ -173,18 +173,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ expanded, onToggle }) => {
             {settings.isSideDockEnabled && (
               <div className="settings-subsection">
                 <h4>Visible Width</h4>
-                {[20, 50, 100, 150].map((width) => (
-                  <label key={width}>
-                    <input
-                      type="radio"
-                      name="sideDockVisibleWidth"
-                      value={width}
-                      checked={settings.sideDockVisibleWidth === width}
-                      onChange={() => handleSettingChange('sideDockVisibleWidth', width)}
-                    />
-                    {width}px
-                  </label>
-                ))}
+                <input
+                  type="range"
+                  min="20"
+                  max="200"
+                  step="10"
+                  value={settings.sideDockVisibleWidth}
+                  onChange={(e) =>
+                    handleSettingChange('sideDockVisibleWidth', parseInt(e.target.value))
+                  }
+                />
+                <span>{settings.sideDockVisibleWidth}px</span>
               </div>
             )}
           </div>
