@@ -95,8 +95,27 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
     .join(' ')
     .trim()
 
+  const menuRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (expanded) {
+      menuRef.current?.focus()
+    }
+  }, [expanded])
+
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>): void => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setExpanded(false)
+    }
+  }
+
   return (
-    <div className="radial-wrap">
+    <div
+      className="radial-wrap"
+      ref={menuRef}
+      tabIndex={-1}
+      onBlur={handleBlur}
+    >
       <div
         className={`radial-btn ${expanded ? 'btn-rotate' : ''}`}
         title="Toggle"

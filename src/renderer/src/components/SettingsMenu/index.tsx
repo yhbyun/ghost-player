@@ -22,12 +22,10 @@ interface Settings {
   openDevToolsOnStart: boolean
 }
 
-interface SettingsMenuProps {
-  expanded: boolean
-  onToggle: () => void
-}
+interface SettingsMenuProps {}
 
-const SettingsMenu: React.FC<SettingsMenuProps> = ({ expanded, onToggle }) => {
+const SettingsMenu: React.FC<SettingsMenuProps> = () => {
+  const [expanded, setExpanded] = useState(false)
   const [settings, setSettings] = useState<Settings | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -64,9 +62,21 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ expanded, onToggle }) => {
     return cleanup
   }, [])
 
+  useEffect(() => {
+    if (expanded) {
+      menuRef.current?.focus()
+    }
+  }, [expanded])
+
   const handleSettingChange = (key: keyof Settings, value: unknown): void => {
     setSettings((prev) => (prev ? { ...prev, [key]: value } : null))
     window.api.setSetting(key, value)
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLDivElement>): void => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setExpanded(false)
+    }
   }
 
   if (!settings) {
@@ -74,11 +84,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({ expanded, onToggle }) => {
   }
 
   return (
-    <div className="settings-wrap" ref={menuRef}>
+    <div
+      className="settings-wrap"
+      ref={menuRef}
+      tabIndex={-1}
+      onBlur={handleBlur}
+    >
       <div
         className={`settings-btn ${expanded ? 'btn-rotate' : ''}`}
         title="Toggle"
-        onClick={onToggle}
+        onClick={() => setExpanded(!expanded)}
       >
         <FontAwesomeIcon icon={faCog} />
       </div>

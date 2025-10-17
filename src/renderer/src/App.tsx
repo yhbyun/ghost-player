@@ -14,7 +14,6 @@ function App(): React.JSX.Element {
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isContextHovering, setIsContextHovering] = useState(false)
-  const [isSettingsMenuExpanded, setIsSettingsMenuExpanded] = useState(false)
   const playerRef = useRef<PlayerRef>(null)
 
   useEffect(() => {
@@ -168,12 +167,6 @@ function App(): React.JSX.Element {
         }}
       >
         {renderContent()}
-        {isSettingsMenuExpanded && (
-          <div
-            className="absolute inset-0 z-50"
-            onClick={() => setIsSettingsMenuExpanded(false)}
-          />
-        )}
         <div className="absolute left-2 bottom-2">
           <RadialMenu
             reset={false}
@@ -183,10 +176,7 @@ function App(): React.JSX.Element {
           />
         </div>
         <div className="absolute right-2 bottom-2">
-          <SettingsMenu
-            expanded={isSettingsMenuExpanded}
-            onToggle={() => setIsSettingsMenuExpanded(!isSettingsMenuExpanded)}
-          />
+          <SettingsMenu />
         </div>
       </div>
     </div>
