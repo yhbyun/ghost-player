@@ -9,6 +9,8 @@ import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
 import { ShortcutManager } from './shortcuts'
 import { registerLocalFileProtocols } from './video/video-playback'
+import fetch from 'node-fetch'
+import FormData from 'form-data'
 
 let mainWindow: BrowserWindow | null
 
@@ -164,6 +166,42 @@ app.whenReady().then(() => {
 
   ipcMain.on('set-setting', (_, { key, value }) => {
     store.set(key, value)
+  })
+
+  ipcMain.handle('transcribe-audio', async (_, { audioData, apiKey }) => {
+    logger.log('captioning', 'Received audio data for transcription.')
+    const formData = new FormData()
+    formData.append('file', Buffer.from(audioData), {
+      filename: 'audio.wav',
+      contentType: 'audio/wav'
+    })
+    formData.append('response_format', 'text')
+
+    try {
+      const response = await fetch('https://api.lemonfox.ai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        logger.error(
+          'captioning',
+          `API Error: ${response.status} ${response.statusText} - ${errorText}`
+        )
+        throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      }
+
+      const transcription = await response.text()
+      logger.log('captioning', 'Transcription successful.')
+      return transcription
+    } catch (error) {
+      logger.error('captioning', 'Error transcribing audio:', error)
+      throw error
+    }
   })
 
   const applySetting = (key: string, value: any): void => {

@@ -47,6 +47,9 @@ const api = {
     return () => {
       ipcRenderer.removeListener('setting-changed', handler)
     }
+  },
+  transcribeAudio: (audioData: Uint8Array, apiKey: string): Promise<any> => {
+    return ipcRenderer.invoke('transcribe-audio', { audioData, apiKey })
   }
 }
 

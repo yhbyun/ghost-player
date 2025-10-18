@@ -20,6 +20,7 @@ interface Settings {
   sideDockVisibleWidth: number
   disableMouse: boolean
   openDevToolsOnStart: boolean
+  whisperApiKey: string
 }
 
 interface SettingsMenuProps {}
@@ -40,6 +41,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
       const sideDockVisibleWidth = await window.api.getSetting('sideDockVisibleWidth', 50)
       const disableMouse = await window.api.getSetting('disableMouse', false)
       const openDevToolsOnStart = await window.api.getSetting('openDevToolsOnStart', false)
+      const whisperApiKey = await window.api.getSetting('whisperApiKey', '')
 
       setSettings({
         isTransparent,
@@ -50,7 +52,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
         isSideDockEnabled,
         sideDockVisibleWidth,
         disableMouse,
-        openDevToolsOnStart
+        openDevToolsOnStart,
+        whisperApiKey
       } as Settings)
     }
     fetchSettings()
@@ -221,6 +224,16 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
               />
               Open DevTools on Start
             </label>
+          </div>
+          <div className="settings-section">
+            <h3>Whisper API Key</h3>
+            <input
+              type="text"
+              value={settings.whisperApiKey}
+              onChange={(e) => handleSettingChange('whisperApiKey', e.target.value)}
+              placeholder="Enter your OpenAI Whisper API Key"
+              className="w-full p-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
+            />
           </div>
         </div>
       )}
