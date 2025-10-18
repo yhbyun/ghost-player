@@ -22,6 +22,7 @@ interface Settings {
   openDevToolsOnStart: boolean
   whisperApiKey: string
   transcriptionProvider: 'remote' | 'local'
+  isVisualizerEnabled: boolean
 }
 
 interface SettingsMenuProps {}
@@ -44,6 +45,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
       const openDevToolsOnStart = await window.api.getSetting('openDevToolsOnStart', false)
       const whisperApiKey = await window.api.getSetting('whisperApiKey', '')
       const transcriptionProvider = await window.api.getSetting('transcriptionProvider', 'remote')
+      const isVisualizerEnabled = await window.api.getSetting('isVisualizerEnabled', false)
 
       setSettings({
         isTransparent,
@@ -56,7 +58,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
         disableMouse,
         openDevToolsOnStart,
         whisperApiKey,
-        transcriptionProvider
+        transcriptionProvider,
+        isVisualizerEnabled
       } as Settings)
     }
     fetchSettings()
@@ -226,6 +229,17 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
                 onChange={(e) => handleSettingChange('openDevToolsOnStart', e.target.checked)}
               />
               Open DevTools on Start
+            </label>
+          </div>
+          <div className="settings-section">
+            <h3>Audio Visualizer</h3>
+            <label>
+              <input
+                type="checkbox"
+                checked={settings.isVisualizerEnabled}
+                onChange={(e) => handleSettingChange('isVisualizerEnabled', e.target.checked)}
+              />
+              Enabled
             </label>
           </div>
           <div className="settings-section">

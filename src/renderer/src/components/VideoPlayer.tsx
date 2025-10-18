@@ -3,6 +3,7 @@ import videojs from 'video.js'
 import 'video.js/dist/video-js.css'
 import Player from 'video.js/dist/types/player'
 import './StreamPlayTech'
+import AudioVisualizer from './AudioVisualizer'
 
 interface VideoPlayerProps {
   src: string
@@ -26,6 +27,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
   const workletNodeRef = useRef<AudioWorkletNode | null>(null)
   const audioDataBufferRef = useRef<Float32Array[]>([])
   const isCapturingAudioRef = useRef(false)
+
+  // Audio visualizer refs
+  const analyserNodeRef = useRef<AnalyserNode | null>(null)
+  const [isVisualizerEnabled, setIsVisualizerEnabled] = useState(false)
+
+  useEffect(() => {
+    const fetchSettings = async (): Promise<void> => {
+      const visualizerEnabled = await window.api.getSetting('isVisualizerEnabled', false)
+      setIsVisualizerEnabled(visualizerEnabled as boolean)
+    }
+    fetchSettings()
+
+    const cleanup = window.api.onSettingChanged(({ key, value }) => {
+      if (key === 'isVisualizerEnabled') {
+        setIsVisualizerEnabled(value as boolean)
+      }
+    })
+
+    return cleanup
+  }, [])
 
   // Caption state
   const [isCaptioningEnabled, setIsCaptioningEnabled] = useState(false)
@@ -233,8 +254,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
           audioDataBufferRef.current.push(event.data)
         }
 
-        sourceNodeRef.current.connect(audioContextRef.current.destination)
+        analyserNodeRef.current = audioContextRef.current.createAnalyser()
+
+        sourceNodeRef.current.connect(analyserNodeRef.current)
         sourceNodeRef.current.connect(workletNodeRef.current)
+        analyserNodeRef.current.connect(audioContextRef.current.destination)
       } catch (error) {
         console.error('Error adding AudioWorklet module or creating node:', error)
       }
@@ -373,6 +397,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
       >
         CC
       </button>
+      <AudioVisualizer
+        analyserNode={analyserNodeRef.current}
+        isVisualizerEnabled={isVisualizerEnabled}
+      />
     </div>
   )
 }
