@@ -21,6 +21,7 @@ interface Settings {
   disableMouse: boolean
   openDevToolsOnStart: boolean
   whisperApiKey: string
+  transcriptionProvider: 'remote' | 'local'
 }
 
 interface SettingsMenuProps {}
@@ -42,6 +43,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
       const disableMouse = await window.api.getSetting('disableMouse', false)
       const openDevToolsOnStart = await window.api.getSetting('openDevToolsOnStart', false)
       const whisperApiKey = await window.api.getSetting('whisperApiKey', '')
+      const transcriptionProvider = await window.api.getSetting('transcriptionProvider', 'remote')
 
       setSettings({
         isTransparent,
@@ -53,7 +55,8 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
         sideDockVisibleWidth,
         disableMouse,
         openDevToolsOnStart,
-        whisperApiKey
+        whisperApiKey,
+        transcriptionProvider
       } as Settings)
     }
     fetchSettings()
@@ -226,14 +229,33 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
             </label>
           </div>
           <div className="settings-section">
-            <h3>Whisper API Key</h3>
-            <input
-              type="text"
-              value={settings.whisperApiKey}
-              onChange={(e) => handleSettingChange('whisperApiKey', e.target.value)}
-              placeholder="Enter your OpenAI Whisper API Key"
-              className="w-full p-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
-            />
+            <h3>Transcription</h3>
+            <div className="settings-subsection">
+              {['remote', 'local'].map((provider) => (
+                <label key={provider}>
+                  <input
+                    type="radio"
+                    name="transcriptionProvider"
+                    value={provider}
+                    checked={settings.transcriptionProvider === provider}
+                    onChange={() => handleSettingChange('transcriptionProvider', provider)}
+                  />
+                  {provider === 'remote' ? 'Remote API' : 'Local Library'}
+                </label>
+              ))}
+            </div>
+            {settings.transcriptionProvider === 'remote' && (
+              <div className="settings-subsection">
+                <h4>API Key</h4>
+                <input
+                  type="text"
+                  value={settings.whisperApiKey}
+                  onChange={(e) => handleSettingChange('whisperApiKey', e.target.value)}
+                  placeholder="Enter your API Key"
+                  className="w-full p-2 mt-1 bg-gray-700 border border-gray-600 rounded-md text-white"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

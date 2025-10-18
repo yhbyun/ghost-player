@@ -9,6 +9,7 @@ export const activeCategories: string[] = [
   'webview',
   'mouse-event',
   'video',
-  'captioning'
+  'captioning',
+  'LocalTranscriber'
   // Add other categories here to enable them, e.g., 'api', 'lifecycle'
 ]

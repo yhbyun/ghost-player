@@ -96,26 +96,33 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
       `[Captioning] Processing audio buffer of size: ${audioDataBufferRef.current.length}`
     )
 
-    const apiKey = await window.api.getSetting('whisperApiKey', '')
-    if (!apiKey) {
-      setCaptionText('Whisper API key is not set.')
-      setIsProcessingAudio(false)
-      setIsCaptioningEnabled(false)
-      return
+    const transcriptionProvider = await window.api.getSetting('transcriptionProvider', 'remote')
+    let apiKey = ''
+
+    if (transcriptionProvider === 'remote') {
+      apiKey = await window.api.getSetting('whisperApiKey', '') as string
+      if (!apiKey) {
+        setCaptionText('Whisper API key is not set.')
+        setIsProcessingAudio(false)
+        setIsCaptioningEnabled(false)
+        return
+      }
+      console.log('[Captioning] Remote API key found. Proceeding with API call.')
+    } else {
+      console.log('[Captioning] Using local transcription. API key not required.')
     }
 
-    console.log('[Captioning] API key found. Proceeding with API call.')
     const audioBuffer = [...audioDataBufferRef.current]
     audioDataBufferRef.current = []
 
-    const sampleRate = audioContextRef.current?.sampleRate || 44100
+    const sampleRate = 16000 // The audio is now resampled to 16kHz in the worklet
     const wavBlob = bufferToWav(audioBuffer, sampleRate)
     const wavBuffer = await wavBlob.arrayBuffer()
     const audioData = new Uint8Array(wavBuffer)
 
     try {
       console.log('[Captioning] Calling main process for transcription...')
-      const transcription = await window.api.transcribeAudio(audioData, apiKey as string)
+      const transcription = await window.api.transcribeAudio(audioData, apiKey)
 
       console.log('[Captioning] Transcription received:', transcription.trim())
       setCaptionText(transcription.trim())

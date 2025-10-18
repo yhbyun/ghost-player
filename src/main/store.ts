@@ -31,6 +31,7 @@ export interface StoreType {
     disableSideDock: string
   }
   disableMouse: boolean
+  transcriptionProvider: 'remote' | 'local'
 }
 
 export const store = new Store<StoreType>({
@@ -115,6 +116,11 @@ export const store = new Store<StoreType>({
     disableMouse: {
       type: 'boolean',
       default: false
+    },
+    transcriptionProvider: {
+      type: 'string',
+      enum: ['remote', 'local'],
+      default: 'remote'
     }
   }
 })

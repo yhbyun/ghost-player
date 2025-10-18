@@ -11,6 +11,8 @@ import { ShortcutManager } from './shortcuts'
 import { registerLocalFileProtocols } from './video/video-playback'
 import fetch from 'node-fetch'
 import FormData from 'form-data'
+import { localTranscriber } from './local-transcriber'
+import fs from 'fs'
 
 let mainWindow: BrowserWindow | null
 
@@ -111,6 +113,9 @@ protocol.registerSchemesAsPrivileged([
 app.whenReady().then(() => {
   registerLocalFileProtocols()
 
+  // Pre-load the local transcription model
+  localTranscriber.transcribe(Buffer.from([]))
+
   if (is.dev && process.platform === 'darwin') {
     app.dock.setIcon(icon)
   }
@@ -169,7 +174,14 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle('transcribe-audio', async (_, { audioData, apiKey }) => {
-    logger.log('captioning', 'Received audio data for transcription.')
+    const provider = store.get('transcriptionProvider', 'remote')
+    logger.log('captioning', `Using transcription provider: ${provider}`)
+
+    if (provider === 'local') {
+      return localTranscriber.transcribe(Buffer.from(audioData))
+    }
+
+    // Remote API logic
     const formData = new FormData()
     formData.append('file', Buffer.from(audioData), {
       filename: 'audio.wav',
