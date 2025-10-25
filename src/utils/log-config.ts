@@ -10,6 +10,7 @@ export const activeCategories: string[] = [
   'mouse-event',
   'video',
   'captioning',
-  'LocalTranscriber'
+  'LocalTranscriber',
+  'adblocker'
   // Add other categories here to enable them, e.g., 'api', 'lifecycle'
 ]

@@ -3,7 +3,6 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { logger } from './logger'
-import { services, Service } from '../config/services'
 import { store } from './store'
 import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
@@ -12,8 +11,7 @@ import { registerLocalFileProtocols } from './video/video-playback'
 import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
-import fs from 'fs'
-import { ElectronBlocker, fetch } from '@ghostery/adblocker-electron'
+import { ElectronBlocker, Request } from '@ghostery/adblocker-electron'
 
 let mainWindow: BrowserWindow | null
 
@@ -114,6 +112,32 @@ protocol.registerSchemesAsPrivileged([
 app.whenReady().then(async () => {
   const blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch)
   blocker.enableBlockingInSession(session.defaultSession)
+
+  // blocker.on('request-blocked', (request: Request) => {
+  //   logger.log('adblocker', 'blocked', request.tabId, request.url)
+  // })
+
+  // blocker.on('request-redirected', (request: Request) => {
+  //   logger.log('adblocker', 'redirected', request.tabId, request.url)
+  // })
+
+  // blocker.on('request-whitelisted', (request: Request) => {
+  //   logger.log('adblocker', 'whitelisted', request.tabId, request.url)
+  // })
+
+  // blocker.on('csp-injected', (request: Request, csps: string) => {
+  //   logger.log('adblocker', 'csp', request.url, csps)
+  // })
+
+  // blocker.on('script-injected', (script: string, url: string) => {
+  //   logger.log('adblocker', 'script', script.length, url)
+  // })
+
+  // blocker.on('style-injected', (style: string, url: string) => {
+  //   logger.log('adblocker', 'style', style.length, url)
+  // })
+
+  // blocker.on('filter-matched', console.log.bind(console, 'filter-matched'));
 
   registerLocalFileProtocols()
 
