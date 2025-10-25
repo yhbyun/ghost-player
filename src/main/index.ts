@@ -320,10 +320,12 @@ app.whenReady().then(() => {
     }
 
     shortcutManager = new ShortcutManager(
+      mainWindow!,
       sideDock!,
       () => store.set('isSideDockEnabled', true),
       store.get('shortcuts.toggleSideDock'),
-      store.get('shortcuts.disableSideDock')
+      store.get('shortcuts.disableSideDock'),
+      store.get('shortcuts.focusWindow')
     )
     shortcutManager.registerShortcuts()
 

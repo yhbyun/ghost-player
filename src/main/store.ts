@@ -29,6 +29,7 @@ export interface StoreType {
   shortcuts: {
     toggleSideDock: string
     disableSideDock: string
+    focusWindow: string
   }
   disableMouse: boolean
   transcriptionProvider: 'remote' | 'local'
@@ -106,11 +107,16 @@ export const store = new Store<StoreType>({
         disableSideDock: {
           type: 'string',
           default: 'Option+F5'
+        },
+        focusWindow: {
+          type: 'string',
+          default: 'Shift+Cmd+0'
         }
       },
       default: {
         toggleSideDock: 'F5',
-        disableSideDock: 'Option+F5'
+        disableSideDock: 'Option+F5',
+        focusWindow: 'Shift+Cmd+0'
       }
     },
     disableMouse: {
