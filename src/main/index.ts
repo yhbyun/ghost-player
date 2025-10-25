@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -13,6 +13,7 @@ import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
 import fs from 'fs'
+import { ElectronBlocker, fetch } from '@ghostery/adblocker-electron'
 
 let mainWindow: BrowserWindow | null
 
@@ -110,7 +111,10 @@ protocol.registerSchemesAsPrivileged([
   }
 ])
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const blocker = await ElectronBlocker.fromPrebuiltAdsAndTracking(fetch)
+  blocker.enableBlockingInSession(session.defaultSession)
+
   registerLocalFileProtocols()
 
   // Pre-load the local transcription model
