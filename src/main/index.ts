@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, Menu } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -171,6 +171,22 @@ app.whenReady().then(() => {
 
   ipcMain.on('set-setting', (_, { key, value }) => {
     store.set(key, value)
+  })
+
+  ipcMain.handle('open-file-dialog', async () => {
+    if (!mainWindow) return
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'Videos', extensions: ['mkv', 'avi', 'mp4', 'mov', 'webm'] }]
+    })
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      const videoSource = result.filePaths[0]
+      mainWindow.webContents.send('open-file', {
+        type: 'native',
+        videoSource: `local-video:${videoSource}`
+      })
+    }
   })
 
   ipcMain.handle('transcribe-audio', async (_, { audioData, apiKey }) => {

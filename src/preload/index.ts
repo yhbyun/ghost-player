@@ -50,6 +50,9 @@ const api = {
   },
   transcribeAudio: (audioData: Uint8Array, apiKey: string): Promise<any> => {
     return ipcRenderer.invoke('transcribe-audio', { audioData, apiKey })
+  },
+  openFile: (): Promise<void> => {
+    return ipcRenderer.invoke('open-file-dialog')
   }
 }
 

@@ -1,7 +1,7 @@
 @use 'sass:list';
 @use 'sass:math';
 
-$n: 4;
+$n: 5;
 $r: math.div(108deg, $n);
 $button-width: 50px;
 $item-width: 40px;

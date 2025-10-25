@@ -16,6 +16,7 @@ declare global {
       getSetting: (key: string, defaultValue: unknown) => Promise<unknown>
       onSettingChanged: (callback: (args: { key:string; value: any }) => void) => () => void
       transcribeAudio: (audioData: Uint8Array, apiKey: string) => Promise<any>
+      openFile: () => Promise<void>
     }
   }
 }

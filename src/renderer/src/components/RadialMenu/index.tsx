@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
-import { faArrowLeft, faRedo } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faRedo, faFolderOpen } from '@fortawesome/free-solid-svg-icons'
 import IconBase from './IconBase'
 import IconNetflix from './IconNetflix'
 import './style.scss'
@@ -11,13 +11,15 @@ interface RadialMenuProps {
   onServiceChange: (service: string) => void
   onHistoryBack: () => void
   onReload: () => void
+  onFileOpen: () => void
 }
 
 const RadialMenu: React.FC<RadialMenuProps> = ({
   reset,
   onServiceChange,
   onHistoryBack,
-  onReload
+  onReload,
+  onFileOpen
 }) => {
   const [expanded, setExpanded] = useState(false)
   const [neverExpanded, setNeverExpanded] = useState(true)
@@ -61,6 +63,9 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
       case 'reload':
         onReload()
         break
+      case 'file-open':
+        onFileOpen()
+        break
       case 'YouTube':
       case 'Netflix':
         if (service) onServiceChange(service)
@@ -80,6 +85,7 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
         </IconBase>
       )
     },
+    { service: 'file-open', icon: <FontAwesomeIcon icon={faFolderOpen} /> },
     { service: 'history-back', icon: <FontAwesomeIcon icon={faArrowLeft} /> },
     { service: 'reload', icon: <FontAwesomeIcon icon={faRedo} /> },
     { service: 'empty1' },
@@ -110,12 +116,7 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
   }
 
   return (
-    <div
-      className="radial-wrap"
-      ref={menuRef}
-      tabIndex={-1}
-      onBlur={handleBlur}
-    >
+    <div className="radial-wrap" ref={menuRef} tabIndex={-1} onBlur={handleBlur}>
       <div
         className={`radial-btn ${expanded ? 'btn-rotate' : ''}`}
         title="Toggle"

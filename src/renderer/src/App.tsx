@@ -111,6 +111,10 @@ function App(): React.JSX.Element {
     }
   }
 
+  const handleFileOpen = (): void => {
+    window.api.openFile()
+  }
+
   const renderContent = (): React.JSX.Element | null => {
     if (!content) {
       return null
@@ -173,6 +177,7 @@ function App(): React.JSX.Element {
             onServiceChange={handleServiceChange}
             onHistoryBack={handleHistoryBack}
             onReload={handleReload}
+            onFileOpen={handleFileOpen}
           />
         </div>
         <div className="absolute right-2 bottom-2">
