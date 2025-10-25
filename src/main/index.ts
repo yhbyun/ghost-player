@@ -136,9 +136,12 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.handle('get-initial-service', (): Service | undefined => {
-    const lastServiceName = store.get('lastService')
-    return services.find((s) => s.name === lastServiceName)
+  ipcMain.handle('get-initial-content', () => {
+    return store.get('lastContent')
+  })
+
+  ipcMain.on('set-last-content', (_, content) => {
+    store.set('lastContent', content)
   })
 
   ipcMain.on('mouse-event', (_, event: 'enter' | 'leave') => {

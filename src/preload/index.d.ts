@@ -7,7 +7,8 @@ declare global {
     electron: ElectronAPI
     api: {
       dragWindow: (deltaX: number, deltaY: number) => void
-      getInitialService: () => Promise<Service | undefined>
+      getInitialContent: () => Promise<any>
+      setLastContent: (content: any) => void
       onChangeService: (callback: (service: Service) => void) => () => void
       onOpenLocation: (callback: (url: string) => void) => () => void
       onOpenFile: (callback: (playParams: PlayParams) => void) => () => void

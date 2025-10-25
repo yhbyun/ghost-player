@@ -10,9 +10,18 @@ interface VideoPlayerProps {
   type: string
   duration?: number
   subtitleSrc?: string
+  currentTime?: number
+  onTimeUpdate?: (time: number) => void
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitleSrc }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  src,
+  type,
+  duration,
+  subtitleSrc,
+  currentTime,
+  onTimeUpdate
+}) => {
   const videoRef = useRef<HTMLDivElement>(null)
   const playerRef = useRef<Player | null>(null)
   const [seekIndicator, setSeekIndicator] = useState<'forward' | 'backward' | null>(null)
@@ -20,6 +29,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
   const [volume, setVolume] = useState(100)
   const [showVolumeIndicator, setShowVolumeIndicator] = useState(false)
   const volumeTimeoutRef = useRef<number | null>(null)
+  const lastUpdateTimeRef = useRef<number>(0)
 
   // Audio capture refs
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -121,7 +131,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
     let apiKey = ''
 
     if (transcriptionProvider === 'remote') {
-      apiKey = await window.api.getSetting('whisperApiKey', '') as string
+      apiKey = (await window.api.getSetting('whisperApiKey', '')) as string
       if (!apiKey) {
         setCaptionText('Whisper API key is not set.')
         setIsProcessingAudio(false)
@@ -285,6 +295,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
         console.error('Video.js Error:', player.error())
       })
 
+      if (currentTime) {
+        player.currentTime(currentTime)
+      }
+
+      player.on('timeupdate', () => {
+        const now = Date.now()
+        if (onTimeUpdate && now - lastUpdateTimeRef.current > 5000) {
+          onTimeUpdate(player.currentTime())
+          lastUpdateTimeRef.current = now
+        }
+      })
+
       setVolume(Math.round(player.volume() * 100))
 
       if (!isCapturingAudioRef.current) {
@@ -339,7 +361,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ src, type, duration, subtitle
       if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
       stopAudioCapture()
     }
-  }, [src, type, duration, subtitleSrc])
+  }, [src, type, duration, subtitleSrc, onTimeUpdate])
 
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {

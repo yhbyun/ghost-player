@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { logger } from './logger'
 import Player, { PlayerRef } from './components/Player'
 import RadialMenu from './components/RadialMenu'
@@ -17,13 +17,20 @@ function App(): React.JSX.Element {
   const playerRef = useRef<PlayerRef>(null)
 
   useEffect(() => {
-    const fetchInitialService = async (): Promise<void> => {
-      const initialService = await window.api.getInitialService()
-      if (initialService) {
-        setContent({ type: 'service', data: initialService })
+    const fetchInitialContent = async (): Promise<void> => {
+      const initialContent = await window.api.getInitialContent()
+      if (initialContent) {
+        if (initialContent.type === 'service') {
+          const service = services.find((s) => s.name === initialContent.data.name)
+          if (service) {
+            setContent({ type: 'service', data: service })
+          }
+        } else {
+          setContent(initialContent)
+        }
       }
     }
-    fetchInitialService()
+    fetchInitialContent()
 
     const cleanupOnChangeService = window.api.onChangeService((newService) => {
       setContent({ type: 'service', data: newService })
@@ -35,7 +42,9 @@ function App(): React.JSX.Element {
 
     const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
       console.log('cleanupOnOpenFile', playParams)
-      setContent({ type: 'video', data: playParams })
+      const newContent = { type: 'video' as const, data: playParams }
+      setContent(newContent)
+      window.api.setLastContent(newContent)
     })
 
     return () => {
@@ -95,7 +104,14 @@ function App(): React.JSX.Element {
   const handleServiceChange = (serviceName: string): void => {
     const newService = services.find((s) => s.name === serviceName)
     if (newService) {
-      setContent({ type: 'service', data: newService })
+      const newContent = { type: 'service' as const, data: newService }
+      setContent(newContent)
+      window.api.setLastContent({
+        type: 'service',
+        data: {
+          name: newService.name
+        }
+      })
     }
   }
 
@@ -115,6 +131,21 @@ function App(): React.JSX.Element {
     window.api.openFile()
   }
 
+  const handleTimeUpdate = useCallback(
+    (time: number): void => {
+      if (content?.type === 'video') {
+        window.api.setLastContent({
+          type: 'video',
+          data: {
+            ...content.data,
+            currentTime: time
+          }
+        })
+      }
+    },
+    [content]
+  )
+
   const renderContent = (): React.JSX.Element | null => {
     if (!content) {
       return null
@@ -125,7 +156,7 @@ function App(): React.JSX.Element {
     }
 
     if (content.type === 'video') {
-      const { videoSource, duration, subtitleSource } = content.data
+      const { videoSource, duration, subtitleSource, currentTime } = content.data
       const mimeType = content.data.videoSource.endsWith('.m3u8')
         ? 'application/x-mpegURL'
         : 'video/mp4'
@@ -135,6 +166,8 @@ function App(): React.JSX.Element {
           type={mimeType}
           duration={duration}
           subtitleSrc={subtitleSource}
+          currentTime={currentTime}
+          onTimeUpdate={handleTimeUpdate}
         />
       )
     }
@@ -160,7 +193,9 @@ function App(): React.JSX.Element {
       {isDragging && <div className="absolute inset-0 z-10" />}
       {/* Non-draggable content area */}
       <div
-        className={`w-full h-full bg-black rounded-lg overflow-hidden ${isContextHovering ? 'hovering' : ''}`}
+        className={`w-full h-full bg-black rounded-lg overflow-hidden ${
+          isContextHovering ? 'hovering' : ''
+        }`}
         onMouseEnter={() => {
           setIsHovering(false)
           setIsContextHovering(true)

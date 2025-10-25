@@ -8,8 +8,11 @@ const api = {
   dragWindow: (deltaX: number, deltaY: number): void => {
     ipcRenderer.send('drag-window', { deltaX, deltaY })
   },
-  getInitialService: (): Promise<Service | undefined> => {
-    return ipcRenderer.invoke('get-initial-service')
+  getInitialContent: (): Promise<any> => {
+    return ipcRenderer.invoke('get-initial-content')
+  },
+  setLastContent: (content: any): void => {
+    ipcRenderer.send('set-last-content', content)
   },
   onChangeService: (callback: (service: Service) => void): (() => void) => {
     const handler = (_event, service): void => callback(service)

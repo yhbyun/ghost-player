@@ -12,7 +12,17 @@ export interface StoreType {
   }
   isTransparent: boolean
   opacity: number
-  lastService: string
+  lastContent: {
+    type: 'service' | 'video'
+    data: {
+      // Service
+      name?: string
+      // Video
+      videoSource?: string
+      subtitleSource?: string
+      currentTime?: number
+    }
+  }
   isAlwaysOnTop: boolean
   alwaysOnTopLevel:
     | 'floating'
@@ -59,9 +69,26 @@ export const store = new Store<StoreType>({
       type: 'number',
       default: 0.8
     },
-    lastService: {
-      type: 'string',
-      default: 'YouTube'
+    lastContent: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: ['service', 'video'], default: 'service' },
+        data: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+            videoSource: { type: 'string' },
+            subtitleSource: { type: 'string' },
+            currentTime: { type: 'number' }
+          }
+        }
+      },
+      default: {
+        type: 'service',
+        data: {
+          name: 'YouTube'
+        }
+      }
     },
     isAlwaysOnTop: {
       type: 'boolean',

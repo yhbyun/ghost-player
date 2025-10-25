@@ -35,6 +35,13 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
       return
     }
 
+    window.api.setLastContent({
+      type: 'service',
+      data: {
+        name: service.name
+      }
+    })
+
     const handleStartLoading = (): void => {
       logger.log('webview', 'webview loading started')
     }
