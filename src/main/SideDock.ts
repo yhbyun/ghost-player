@@ -11,6 +11,7 @@ export class SideDock {
   private animationInterval: NodeJS.Timeout | null = null
   private visibleWidth: number
   private isAnimating = false
+  private wasAlwaysOnTopTemporarilySet = false
 
   constructor(mainWindow: BrowserWindow, visibleWidth: number) {
     this.mainWindow = mainWindow
@@ -105,11 +106,21 @@ export class SideDock {
     }
     const targetBounds = this.getDockedBounds()
     this.animateMove(targetBounds.x)
+    if (this.wasAlwaysOnTopTemporarilySet) {
+      this.mainWindow.setAlwaysOnTop(false)
+      this.wasAlwaysOnTopTemporarilySet = false
+    }
   }
 
   private undock(): void {
     if (!this.isDocked || !this.originalBounds) return
     this.isDocked = false
+
+    if (!this.mainWindow.isAlwaysOnTop()) {
+      this.mainWindow.setAlwaysOnTop(true, 'main-menu')
+      this.wasAlwaysOnTopTemporarilySet = true
+    }
+
     const targetBounds = this.getUndockedBounds()
     this.animateMove(targetBounds.x)
   }
