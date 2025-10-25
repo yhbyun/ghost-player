@@ -12,6 +12,9 @@ import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
 import { ElectronBlocker, Request } from '@ghostery/adblocker-electron'
+import { EventEmitter } from 'events'
+
+EventEmitter.defaultMaxListeners = 30
 
 let mainWindow: BrowserWindow | null
 
