@@ -47,7 +47,10 @@ export class ShortcutManager {
     if (!ret) {
       console.error('Failed to register Disable Side Dock shortcut:', this.disableSideDockShortcut)
     } else {
-      console.log('Successfully registered Disable Side Dock shortcut:', this.disableSideDockShortcut)
+      console.log(
+        'Successfully registered Disable Side Dock shortcut:',
+        this.disableSideDockShortcut
+      )
     }
 
     ret = globalShortcut.register(this.focusWindowShortcut, () => {

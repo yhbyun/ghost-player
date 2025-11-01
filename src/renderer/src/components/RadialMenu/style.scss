@@ -6,24 +6,12 @@ $r: math.div(108deg, $n);
 $button-width: 50px;
 $item-width: 40px;
 
-$d1: (
-  $r * 0
-);
-$d2: (
-  $r * 1
-);
-$d3: (
-  $r * 2
-);
-$d4: (
-  $r * 3
-);
-$d5: (
-  $r * 4
-);
-$d6: (
-  $r * 5
-);
+$d1: ($r * 0);
+$d2: ($r * 1);
+$d3: ($r * 2);
+$d4: ($r * 3);
+$d5: ($r * 4);
+$d6: ($r * 5);
 
 .hovering .radial-wrap .radial-btn {
   display: flex;
@@ -40,7 +28,7 @@ $d6: (
     padding: 0;
     list-style: none;
 
-    &>li {
+    & > li {
       position: absolute;
       display: block;
       height: 170px;
@@ -190,7 +178,7 @@ $d6: (
       background-color: rgba(0, 0, 0, 0.7);
     }
 
-    >div {
+    > div {
       text-align: center;
       width: $button-width - 14;
       height: $button-width - 14;

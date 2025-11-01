@@ -1,35 +1,35 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Service } from '../config/services'
-import { PlayParams } from '../types'
+import { PlayParams, Content } from '../types'
 
 // Custom APIs for renderer
 const api = {
   dragWindow: (deltaX: number, deltaY: number): void => {
     ipcRenderer.send('drag-window', { deltaX, deltaY })
   },
-  getInitialContent: (): Promise<any> => {
+  getInitialContent: (): Promise<Content | undefined> => {
     return ipcRenderer.invoke('get-initial-content')
   },
-  setLastContent: (content: any): void => {
+  setLastContent: (content: Content): void => {
     ipcRenderer.send('set-last-content', content)
   },
   onChangeService: (callback: (service: Service) => void): (() => void) => {
-    const handler = (_event, service): void => callback(service)
+    const handler = (_event, service: Service): void => callback(service)
     ipcRenderer.on('change-service', handler)
     return () => {
       ipcRenderer.removeListener('change-service', handler)
     }
   },
   onOpenLocation: (callback: (url: string) => void): (() => void) => {
-    const handler = (_event, url): void => callback(url)
+    const handler = (_event, url: string): void => callback(url)
     ipcRenderer.on('open-location', handler)
     return () => {
       ipcRenderer.removeListener('open-location', handler)
     }
   },
   onOpenFile: (callback: (playParams: PlayParams) => void): (() => void) => {
-    const handler = (_event, playParams): void => callback(playParams)
+    const handler = (_event, playParams: PlayParams): void => callback(playParams)
     ipcRenderer.on('open-file', handler)
     return () => {
       ipcRenderer.removeListener('open-file', handler)
@@ -44,14 +44,14 @@ const api = {
   getSetting: (key: string, defaultValue: unknown): Promise<unknown> => {
     return ipcRenderer.invoke('get-setting', { key, defaultValue })
   },
-  onSettingChanged: (callback: (args: { key: string; value: any }) => void): (() => void) => {
+  onSettingChanged: (callback: (args: { key: string; value: unknown }) => void): (() => void) => {
     const handler = (_event, args): void => callback(args)
     ipcRenderer.on('setting-changed', handler)
     return () => {
       ipcRenderer.removeListener('setting-changed', handler)
     }
   },
-  transcribeAudio: (audioData: Uint8Array, apiKey: string): Promise<any> => {
+  transcribeAudio: (audioData: Uint8Array, apiKey: string): Promise<string> => {
     return ipcRenderer.invoke('transcribe-audio', { audioData, apiKey })
   },
   openFile: (): Promise<void> => {

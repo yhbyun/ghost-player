@@ -93,12 +93,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
   }
 
   return (
-    <div
-      className="settings-wrap"
-      ref={menuRef}
-      tabIndex={-1}
-      onBlur={handleBlur}
-    >
+    <div className="settings-wrap" ref={menuRef} tabIndex={-1} onBlur={handleBlur}>
       <div
         className={`settings-btn ${expanded ? 'btn-rotate' : ''}`}
         title="Toggle"

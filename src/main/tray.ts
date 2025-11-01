@@ -1,16 +1,15 @@
-
 import { Tray, Menu, nativeImage, app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 
 let tray: Tray | null = null
 
-const createTray = (win: BrowserWindow) => {
+const createTray = (win: BrowserWindow): void => {
   const playIcon = nativeImage.createFromPath(path.join(__dirname, '../../resources/play.png'))
   const stopIcon = nativeImage.createFromPath(path.join(__dirname, '../../resources/stop.png'))
 
   tray = new Tray(playIcon)
 
-  const updateTray = (isPlaying: boolean) => {
+  const updateTray = (isPlaying: boolean): void => {
     if (!tray) return
 
     const icon = isPlaying ? stopIcon : playIcon

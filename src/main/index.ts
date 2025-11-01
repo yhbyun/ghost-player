@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog, session, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -11,7 +11,7 @@ import { registerLocalFileProtocols } from './video/video-playback'
 import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
-import { ElectronBlocker, Request } from '@ghostery/adblocker-electron'
+import { ElectronBlocker } from '@ghostery/adblocker-electron'
 import { EventEmitter } from 'events'
 import { createTray } from './tray'
 
@@ -267,7 +267,7 @@ app.whenReady().then(async () => {
     }
   })
 
-  const applySetting = (key: string, value: any): void => {
+  const applySetting = (key: string, value: unknown): void => {
     const menu = Menu.getApplicationMenu()
     if (!menu) return
 
@@ -275,14 +275,14 @@ app.whenReady().then(async () => {
       case 'isTransparent': {
         mainWindow?.setOpacity(value ? store.get('opacity') : 1.0)
         const menuItem = menu.getMenuItemById('transparency-enabled')
-        if (menuItem) menuItem.checked = value
+        if (menuItem) menuItem.checked = value as boolean
         break
       }
       case 'opacity': {
         if (store.get('isTransparent')) {
-          mainWindow?.setOpacity(value)
+          mainWindow?.setOpacity(value as number)
         }
-        const menuItem = menu.getMenuItemById(`transparency-opacity-${value * 100}`)
+        const menuItem = menu.getMenuItemById(`transparency-opacity-${(value as number) * 100}`)
         if (menuItem) menuItem.checked = true
         break
       }
@@ -295,13 +295,24 @@ app.whenReady().then(async () => {
         break
       }
       case 'isAlwaysOnTop': {
-        mainWindow?.setAlwaysOnTop(value, store.get('alwaysOnTopLevel'))
+        mainWindow?.setAlwaysOnTop(value as boolean, store.get('alwaysOnTopLevel'))
         const menuItem = menu.getMenuItemById('always-on-top-enabled')
-        if (menuItem) menuItem.checked = value
+        if (menuItem) menuItem.checked = value as boolean
         break
       }
       case 'alwaysOnTopLevel': {
-        mainWindow?.setAlwaysOnTop(store.get('isAlwaysOnTop'), value)
+        mainWindow?.setAlwaysOnTop(
+          store.get('isAlwaysOnTop'),
+          value as
+            | 'normal'
+            | 'floating'
+            | 'torn-off-menu'
+            | 'modal-panel'
+            | 'main-menu'
+            | 'status'
+            | 'pop-up-menu'
+            | 'screen-saver'
+        )
         const menuItem = menu.getMenuItemById(`always-on-top-level-${value}`)
         if (menuItem) menuItem.checked = true
         break
@@ -313,24 +324,24 @@ app.whenReady().then(async () => {
           sideDock?.disable()
         }
         const menuItem = menu.getMenuItemById('side-dock-enabled')
-        if (menuItem) menuItem.checked = value
+        if (menuItem) menuItem.checked = value as boolean
         break
       }
       case 'sideDockVisibleWidth': {
-        sideDock?.setVisibleWidth(value)
+        sideDock?.setVisibleWidth(value as number)
         const menuItem = menu.getMenuItemById(`side-dock-visible-width-${value}`)
         if (menuItem) menuItem.checked = true
         break
       }
       case 'disableMouse': {
-        mainWindow?.setIgnoreMouseEvents(value)
+        mainWindow?.setIgnoreMouseEvents(value as boolean)
         const menuItem = menu.getMenuItemById('disable-mouse')
-        if (menuItem) menuItem.checked = value
+        if (menuItem) menuItem.checked = value as boolean
         break
       }
       case 'openDevToolsOnStart': {
         const menuItem = menu.getMenuItemById('open-devtools-on-start')
-        if (menuItem) menuItem.checked = value
+        if (menuItem) menuItem.checked = value as boolean
         break
       }
     }
@@ -372,9 +383,7 @@ app.whenReady().then(async () => {
     })
   })
 
-  setupMenu(
-    () => mainWindow
-  )
+  setupMenu(() => mainWindow)
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the

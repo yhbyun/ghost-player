@@ -1,9 +1,61 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import videojs from 'video.js'
 import 'video.js/dist/video-js.css'
 import Player from 'video.js/dist/types/player'
 import './StreamPlayTech'
 import AudioVisualizer from './AudioVisualizer'
+
+// --- WAV Encoding Utility ---
+const bufferToWav = (buffer: Float32Array[], sampleRate: number): Blob => {
+  const numChannels = 1
+  const totalLength = buffer.reduce((acc, val) => acc + val.length, 0)
+  const result = new Float32Array(totalLength)
+
+  let offset = 0
+  for (const buf of buffer) {
+    result.set(buf, offset)
+    offset += buf.length
+  }
+
+  const dataView = encodeWAV(result, sampleRate, numChannels)
+  return new Blob([dataView], { type: 'audio/wav' })
+}
+
+const encodeWAV = (samples: Float32Array, sampleRate: number, numChannels: number): DataView => {
+  const buffer = new ArrayBuffer(44 + samples.length * 2)
+  const view = new DataView(buffer)
+
+  const writeString = (offset: number, str: string): void => {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i))
+    }
+  }
+
+  const floatTo16BitPCM = (output: DataView, offset: number, input: Float32Array): void => {
+    for (let i = 0; i < input.length; i++, offset += 2) {
+      const s = Math.max(-1, Math.min(1, input[i]))
+      output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+    }
+  }
+
+  writeString(0, 'RIFF')
+  view.setUint32(4, 36 + samples.length * 2, true)
+  writeString(8, 'WAVE')
+  writeString(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, numChannels, true)
+  view.setUint32(24, sampleRate, true)
+  view.setUint32(28, sampleRate * 2 * numChannels, true)
+  view.setUint16(32, numChannels * 2, true)
+  view.setUint16(34, 16, true)
+  writeString(36, 'data')
+  view.setUint32(40, samples.length * 2, true)
+  floatTo16BitPCM(view, 44, samples)
+
+  return view
+}
+// --- End of WAV Utility ---
 
 interface VideoPlayerProps {
   src: string
@@ -69,59 +121,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isProcessingAudio, setIsProcessingAudio] = useState(false)
   const captionIntervalRef = useRef<number | null>(null)
 
-  // --- WAV Encoding Utility ---
-  const bufferToWav = (buffer: Float32Array[], sampleRate: number): Blob => {
-    const numChannels = 1
-    const totalLength = buffer.reduce((acc, val) => acc + val.length, 0)
-    const result = new Float32Array(totalLength)
-
-    let offset = 0
-    for (const buf of buffer) {
-      result.set(buf, offset)
-      offset += buf.length
-    }
-
-    const dataView = encodeWAV(result, sampleRate, numChannels)
-    return new Blob([dataView], { type: 'audio/wav' })
-  }
-
-  const encodeWAV = (samples: Float32Array, sampleRate: number, numChannels: number): DataView => {
-    const buffer = new ArrayBuffer(44 + samples.length * 2)
-    const view = new DataView(buffer)
-
-    const writeString = (offset: number, str: string): void => {
-      for (let i = 0; i < str.length; i++) {
-        view.setUint8(offset + i, str.charCodeAt(i))
-      }
-    }
-
-    const floatTo16BitPCM = (output: DataView, offset: number, input: Float32Array): void => {
-      for (let i = 0; i < input.length; i++, offset += 2) {
-        const s = Math.max(-1, Math.min(1, input[i]))
-        output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true)
-      }
-    }
-
-    writeString(0, 'RIFF')
-    view.setUint32(4, 36 + samples.length * 2, true)
-    writeString(8, 'WAVE')
-    writeString(12, 'fmt ')
-    view.setUint32(16, 16, true)
-    view.setUint16(20, 1, true)
-    view.setUint16(22, numChannels, true)
-    view.setUint32(24, sampleRate, true)
-    view.setUint32(28, sampleRate * 2 * numChannels, true)
-    view.setUint16(32, numChannels * 2, true)
-    view.setUint16(34, 16, true)
-    writeString(36, 'data')
-    view.setUint32(40, samples.length * 2, true)
-    floatTo16BitPCM(view, 44, samples)
-
-    return view
-  }
-  // --- End of WAV Utility ---
-
-  const processAudioForCaptioning = async (): Promise<void> => {
+  const processAudioForCaptioning = useCallback(async (): Promise<void> => {
     if (audioDataBufferRef.current.length === 0) {
       console.log('[Captioning] No audio data in buffer to process.')
       return
@@ -173,7 +173,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } finally {
       setIsProcessingAudio(false)
     }
-  }
+  }, [captionText])
 
   const handleToggleCaptioning = (): void => {
     const willBeEnabled = !isCaptioningEnabled
@@ -213,7 +213,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsProcessingAudio(false)
       audioDataBufferRef.current = []
     }
-  }, [isCaptioningEnabled])
+  }, [isCaptioningEnabled, processAudioForCaptioning])
 
   useEffect(() => {
     if (!videoRef.current) {
@@ -252,7 +252,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const startAudioCapture = async (videoHtmlElement: HTMLVideoElement): Promise<void> => {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+      const AudioContext =
+        window.AudioContext ||
+        (window as Window & typeof globalThis & { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
       if (!AudioContext) {
         console.error('Web Audio API is not supported in this browser')
         return
@@ -374,7 +377,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
       stopAudioCapture()
     }
-  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef])
+  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef, currentTime])
 
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {

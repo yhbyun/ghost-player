@@ -4,7 +4,11 @@
 
 .video-js .vjs-text-track-display > div > div > div {
   background-color: transparent !important;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
 }
 
 .loader {
@@ -17,7 +21,7 @@
   transform: translate(-50%, -50%);
 }
 
-.loader>img {
+.loader > img {
   margin: 0 auto;
   display: block;
   height: 110px;
@@ -27,7 +31,7 @@
   -webkit-app-region: no-drag;
 }
 
-.loader>.ripple {
+.loader > .ripple {
   position: fixed;
   top: 50%;
   left: 50%;

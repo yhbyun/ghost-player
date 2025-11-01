@@ -87,7 +87,10 @@ class LocalTranscriber {
       const wav = new wavefile.WaveFile(audioBuffer)
 
       // 디버깅: WAV 파일 정보 출력
-      logger.log('LocalTranscriber', `Original WAV - Sample Rate: ${wav.fmt.sampleRate}, Channels: ${wav.fmt.numChannels}, Bit Depth: ${wav.fmt.bitsPerSample}`)
+      logger.log(
+        'LocalTranscriber',
+        `Original WAV - Sample Rate: ${wav.fmt.sampleRate}, Channels: ${wav.fmt.numChannels}, Bit Depth: ${wav.fmt.bitsPerSample}`
+      )
 
       // Ensure audio is 16kHz
       wav.toSampleRate(16000)
@@ -114,13 +117,19 @@ class LocalTranscriber {
       // 디버깅: 정규화 전 샘플 값 범위 확인
       const minSampleBefore = Math.min(...Array.from(monoSamples).slice(0, 1000))
       const maxSampleBefore = Math.max(...Array.from(monoSamples).slice(0, 1000))
-      logger.log('LocalTranscriber', `Sample value range before normalization (first 1000): min=${minSampleBefore}, max=${maxSampleBefore}`)
+      logger.log(
+        'LocalTranscriber',
+        `Sample value range before normalization (first 1000): min=${minSampleBefore}, max=${maxSampleBefore}`
+      )
 
       // Normalize to -1.0 to 1.0 range if needed
       const bitDepth = wav.fmt.bitsPerSample
       const maxValue = Math.pow(2, bitDepth - 1)
 
-      logger.log('LocalTranscriber', `Bit depth: ${bitDepth}, Max value for normalization: ${maxValue}`)
+      logger.log(
+        'LocalTranscriber',
+        `Bit depth: ${bitDepth}, Max value for normalization: ${maxValue}`
+      )
 
       // Check if normalization is needed
       const needsNormalization = Math.abs(maxSampleBefore) > 1.0 || Math.abs(minSampleBefore) > 1.0
@@ -134,7 +143,10 @@ class LocalTranscriber {
       // 디버깅: 정규화 후 샘플 값 범위 확인
       const minSample = Math.min(...Array.from(monoSamples).slice(0, 1000))
       const maxSample = Math.max(...Array.from(monoSamples).slice(0, 1000))
-      logger.log('LocalTranscriber', `Sample value range after normalization (first 1000): min=${minSample}, max=${maxSample}`)
+      logger.log(
+        'LocalTranscriber',
+        `Sample value range after normalization (first 1000): min=${minSample}, max=${maxSample}`
+      )
 
       // 오디오 길이 확인 (초 단위)
       const durationSeconds = monoSamples.length / 16000
@@ -152,7 +164,10 @@ class LocalTranscriber {
 
       // 너무 짧은 오디오 체크 (0.1초 미만)
       if (durationSeconds < 0.1) {
-        logger.log('LocalTranscriber', 'Audio is too short (< 0.1 seconds). Skipping transcription.')
+        logger.log(
+          'LocalTranscriber',
+          'Audio is too short (< 0.1 seconds). Skipping transcription.'
+        )
         return ''
       }
 
@@ -168,7 +183,11 @@ class LocalTranscriber {
       })
 
       // logger.log('LocalTranscriber', 'Transcription finished. Raw output:', output)
-      logger.log('LocalTranscriber', 'Transcription finished. Raw output:', JSON.stringify(output, null, 2))
+      logger.log(
+        'LocalTranscriber',
+        'Transcription finished. Raw output:',
+        JSON.stringify(output, null, 2)
+      )
 
       const text = typeof output === 'string' ? output : output.text
       return text.trim()
