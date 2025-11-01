@@ -12,6 +12,9 @@ interface VideoPlayerProps {
   subtitleSrc?: string
   currentTime?: number
   onTimeUpdate?: (time: number) => void
+  onPlay?: () => void
+  onPause?: () => void
+  playerRef: React.MutableRefObject<Player | null>
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -20,10 +23,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   duration,
   subtitleSrc,
   currentTime,
-  onTimeUpdate
+  onTimeUpdate,
+  onPlay,
+  onPause,
+  playerRef
 }) => {
   const videoRef = useRef<HTMLDivElement>(null)
-  const playerRef = useRef<Player | null>(null)
   const [seekIndicator, setSeekIndicator] = useState<'forward' | 'backward' | null>(null)
   const seekTimeoutRef = useRef<number | null>(null)
   const [volume, setVolume] = useState(100)
@@ -307,6 +312,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
       })
 
+      player.on('play', () => {
+        onPlay?.()
+      })
+
+      player.on('pause', () => {
+        onPause?.()
+      })
+
       setVolume(Math.round(player.volume() * 100))
 
       if (!isCapturingAudioRef.current) {
@@ -361,7 +374,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
       stopAudioCapture()
     }
-  }, [src, type, duration, subtitleSrc, onTimeUpdate])
+  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef])
 
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {

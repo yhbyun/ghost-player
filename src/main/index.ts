@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog, session } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol, Menu, dialog, session, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -13,6 +13,7 @@ import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
 import { ElectronBlocker, Request } from '@ghostery/adblocker-electron'
 import { EventEmitter } from 'events'
+import { createTray } from './tray'
 
 EventEmitter.defaultMaxListeners = 30
 
@@ -348,6 +349,9 @@ app.whenReady().then(async () => {
   let shortcutManager: ShortcutManager | null = null
 
   createWindow(() => {
+    if (!mainWindow) return
+    createTray(mainWindow)
+
     sideDock = new SideDock(mainWindow!, store.get('sideDockVisibleWidth'))
     if (store.get('isSideDockEnabled')) {
       sideDock.enable()

@@ -56,6 +56,16 @@ const api = {
   },
   openFile: (): Promise<void> => {
     return ipcRenderer.invoke('open-file-dialog')
+  },
+  sendPlaybackState: (isPlaying: boolean): void => {
+    ipcRenderer.send('playback-state', isPlaying)
+  },
+  onPlaybackControl: (callback: (action: 'play' | 'stop') => void): (() => void) => {
+    const handler = (_event, action): void => callback(action)
+    ipcRenderer.on('playback-control', handler)
+    return () => {
+      ipcRenderer.removeListener('playback-control', handler)
+    }
   }
 }
 

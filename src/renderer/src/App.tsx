@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { logger } from './logger'
 import Player, { PlayerRef } from './components/Player'
 import RadialMenu from './components/RadialMenu'
@@ -6,6 +6,7 @@ import SettingsMenu from './components/SettingsMenu'
 import VideoPlayer from './components/VideoPlayer'
 import { Service, services } from '../../config/services'
 import { PlayParams } from '../../types'
+import videojs from 'video.js'
 
 type ContentSource = { type: 'service'; data: Service } | { type: 'video'; data: PlayParams }
 
@@ -15,6 +16,7 @@ function App(): React.JSX.Element {
   const [isDragging, setIsDragging] = useState(false)
   const [isContextHovering, setIsContextHovering] = useState(false)
   const playerRef = useRef<PlayerRef>(null)
+  const videoPlayerRef = useRef<videojs.Player | null>(null)
 
   useEffect(() => {
     const fetchInitialContent = async (): Promise<void> => {
@@ -47,10 +49,19 @@ function App(): React.JSX.Element {
       window.api.setLastContent(newContent)
     })
 
+    const cleanupOnPlaybackControl = window.api.onPlaybackControl((action) => {
+      if (action === 'play') {
+        videoPlayerRef.current?.play()
+      } else {
+        videoPlayerRef.current?.pause()
+      }
+    })
+
     return () => {
       cleanupOnChangeService()
       cleanupOnOpenLocation()
       cleanupOnOpenFile()
+      cleanupOnPlaybackControl()
     }
   }, [])
 
@@ -146,7 +157,7 @@ function App(): React.JSX.Element {
     [content]
   )
 
-  const renderContent = (): React.JSX.Element | null => {
+  const renderedContent = useMemo(() => {
     if (!content) {
       return null
     }
@@ -162,18 +173,21 @@ function App(): React.JSX.Element {
         : 'video/mp4'
       return (
         <VideoPlayer
+          playerRef={videoPlayerRef}
           src={videoSource}
           type={mimeType}
           duration={duration}
           subtitleSrc={subtitleSource}
           currentTime={currentTime}
           onTimeUpdate={handleTimeUpdate}
+          onPlay={() => window.api.sendPlaybackState(true)}
+          onPause={() => window.api.sendPlaybackState(false)}
         />
       )
     }
 
     return null
-  }
+  }, [content, handleTimeUpdate])
 
   return (
     <div
@@ -205,7 +219,7 @@ function App(): React.JSX.Element {
           setIsContextHovering(false)
         }}
       >
-        {renderContent()}
+        {renderedContent}
         <div className="absolute left-2 bottom-2">
           <RadialMenu
             reset={false}

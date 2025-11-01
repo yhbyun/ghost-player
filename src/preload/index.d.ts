@@ -15,9 +15,11 @@ declare global {
       notifyMouseEvent: (event: 'enter' | 'leave') => void
       setSetting: (key: string, value: unknown) => void
       getSetting: (key: string, defaultValue: unknown) => Promise<unknown>
-      onSettingChanged: (callback: (args: { key:string; value: any }) => void) => () => void
+      onSettingChanged: (callback: (args: { key: string; value: any }) => void) => () => void
       transcribeAudio: (audioData: Uint8Array, apiKey: string) => Promise<any>
       openFile: () => Promise<void>
+      sendPlaybackState: (isPlaying: boolean) => void
+      onPlaybackControl: (callback: (action: 'play' | 'stop') => void) => () => void
     }
   }
 }
