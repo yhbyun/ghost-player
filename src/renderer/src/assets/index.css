@@ -2,6 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes zoom-in-out {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-zoom-in-out {
+  animation: zoom-in-out 0.8s ease-in-out forwards;
+}
+
+
 .video-js .vjs-text-track-display > div > div > div {
   background-color: transparent !important;
   text-shadow:

@@ -81,12 +81,21 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   playerRef
 }) => {
   const videoRef = useRef<HTMLDivElement>(null)
-  const [seekIndicator, setSeekIndicator] = useState<'forward' | 'backward' | null>(null)
+  const [seekIndicator, setSeekIndicator] = useState<{
+    type: 'forward' | 'backward'
+    key: number
+  } | null>(null)
   const seekTimeoutRef = useRef<number | null>(null)
-  const [volume, setVolume] = useState(100)
-  const [showVolumeIndicator, setShowVolumeIndicator] = useState(false)
+  const [volumeIndicator, setVolumeIndicator] = useState<{ volume: number; key: number } | null>(
+    null
+  )
   const volumeTimeoutRef = useRef<number | null>(null)
   const lastUpdateTimeRef = useRef<number>(0)
+  const [playPauseIndicator, setPlayPauseIndicator] = useState<{
+    type: 'play' | 'pause'
+    key: number
+  } | null>(null)
+  const playPauseTimeoutRef = useRef<number | null>(null)
 
   // Audio capture refs
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -323,8 +332,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         onPause?.()
       })
 
-      setVolume(Math.round(player.volume() * 100))
-
       if (!isCapturingAudioRef.current) {
         const videoHtmlElement = videoElement.querySelector('video')
         if (videoHtmlElement) {
@@ -339,8 +346,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const showSeekIndicator = (direction: 'forward' | 'backward'): void => {
       if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current)
-      setSeekIndicator(direction)
-      seekTimeoutRef.current = window.setTimeout(() => setSeekIndicator(null), 1000)
+      setSeekIndicator({ type: direction, key: Date.now() })
+      seekTimeoutRef.current = window.setTimeout(() => setSeekIndicator(null), 800)
+    }
+
+    const showPlayPauseIndicator = (type: 'play' | 'pause'): void => {
+      if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current)
+      setPlayPauseIndicator({ type, key: Date.now() })
+      playPauseTimeoutRef.current = window.setTimeout(() => setPlayPauseIndicator(null), 800)
     }
 
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -366,13 +379,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const handleVolumeChange = (): void => {
       if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
-      setVolume(Math.round(player.volume() * 100))
-      setShowVolumeIndicator(true)
-      volumeTimeoutRef.current = window.setTimeout(() => setShowVolumeIndicator(false), 1500)
+      setVolumeIndicator({ volume: Math.round(player.volume() * 100), key: Date.now() })
+      volumeTimeoutRef.current = window.setTimeout(() => setVolumeIndicator(null), 800)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     player.on('volumechange', handleVolumeChange)
+    player.on('play', () => showPlayPauseIndicator('play'))
+    player.on('pause', () => showPlayPauseIndicator('pause'))
 
     return () => {
       if (player && !player.isDisposed()) {
@@ -382,10 +396,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current)
       if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
+      if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current)
       stopAudioCapture()
     }
   }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef, currentTime])
-
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {
       return null
@@ -409,35 +423,82 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   return (
     <div data-vjs-player className="relative flex items-center w-full h-full">
-      <div ref={videoRef} className="w-full" />
+      <div ref={videoRef} className="w-full relative">
+        {playPauseIndicator && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div
+              key={playPauseIndicator.key}
+              className="bg-black bg-opacity-60 text-white p-5 w-20 h-20 rounded-full flex items-center justify-center animate-zoom-in-out"
+            >
+              {playPauseIndicator.type === 'play' ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-16 h-16"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-16 h-16"
+                >
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                </svg>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {seekIndicator && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 bg-black bg-opacity-60 text-white px-5 py-3 rounded-lg flex flex-col items-center">
-          {seekIndicator === 'backward' ? (
-            <>
-              <span className="text-4xl">◀◀◀</span>
-              <span className="text-lg">-5 seconds</span>
-            </>
-          ) : (
-            <>
-              <span className="text-4xl">▶▶▶</span>
-              <span className="text-lg">+5 seconds</span>
-            </>
-          )}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div
+            key={seekIndicator.key}
+            className="bg-black bg-opacity-60 text-white p-5 w-20 h-20 rounded-full flex items-center justify-center animate-zoom-in-out"
+          >
+            {seekIndicator.type === 'backward' ? (
+              <div className="text-center flex flex-col items-center">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z" />
+                </svg>
+                <div className="text-sm font-light">-5s</div>
+              </div>
+            ) : (
+              <div className="text-center flex flex-col items-center">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
+                </svg>
+                <div className="text-sm font-light">+5s</div>
+              </div>
+            )}
+          </div>
         </div>
       )}
-      {showVolumeIndicator && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-12 bg-black bg-opacity-60 text-white text-lg px-4 py-2 rounded-md">
-          Volume: {volume}%
+      {volumeIndicator && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div
+            key={volumeIndicator.key}
+            className="bg-black bg-opacity-60 text-white text-lg p-5 w-20 h-20 rounded-full flex items-center justify-center animate-zoom-in-out"
+          >
+            <div className="text-center flex flex-col items-center">
+              <div className="text-sm font-light">Volume</div>
+              <div className="text-sm font-light">{volumeIndicator.volume}%</div>
+            </div>
+          </div>
         </div>
       )}
       {renderCaption()}
       <button
         onClick={handleToggleCaptioning}
-        className={`absolute bottom-2 right-20 font-bold py-2 px-4 rounded ${
-          isCaptioningEnabled
-            ? 'bg-blue-700 text-white'
-            : 'bg-gray-500 hover:bg-gray-600 text-white'
-        }`}
+        className={`absolute bottom-2 right-20 font-bold py-2 px-4 rounded
+          ${
+            isCaptioningEnabled
+              ? 'bg-blue-700 text-white'
+              : 'bg-gray-500 hover:bg-gray-600 text-white'
+          }`}
         title="Toggle Live Captions"
       >
         CC
