@@ -344,7 +344,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const handleKeyDown = (e: KeyboardEvent): void => {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === ' ') {
+        e.preventDefault()
+        if (player.paused()) {
+          player.play()
+        } else {
+          player.pause()
+        }
+      } else if (e.key === 'ArrowLeft') {
         player.currentTime(player.currentTime() - 5)
         showSeekIndicator('backward')
       } else if (e.key === 'ArrowRight') {
