@@ -17,6 +17,11 @@ function App(): React.JSX.Element {
   const [isContextHovering, setIsContextHovering] = useState(false)
   const playerRef = useRef<PlayerRef>(null)
   const videoPlayerRef = useRef<videojs.Player | null>(null)
+  const [alwaysOnTopIndicator, setAlwaysOnTopIndicator] = useState<{
+    status: boolean
+    key: number
+  } | null>(null)
+  const alwaysOnTopTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     const fetchInitialContent = async (): Promise<void> => {
@@ -57,11 +62,18 @@ function App(): React.JSX.Element {
       }
     })
 
+    const cleanupOnAlwaysOnTopStatusChanged = window.api.onAlwaysOnTopStatusChanged((status) => {
+      if (alwaysOnTopTimeoutRef.current) clearTimeout(alwaysOnTopTimeoutRef.current)
+      setAlwaysOnTopIndicator({ status, key: Date.now() })
+      alwaysOnTopTimeoutRef.current = window.setTimeout(() => setAlwaysOnTopIndicator(null), 800)
+    })
+
     return () => {
       cleanupOnChangeService()
       cleanupOnOpenLocation()
       cleanupOnOpenFile()
       cleanupOnPlaybackControl()
+      cleanupOnAlwaysOnTopStatusChanged()
     }
   }, [])
 
@@ -220,6 +232,16 @@ function App(): React.JSX.Element {
         }}
       >
         {renderedContent}
+        {alwaysOnTopIndicator && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+            <div
+              key={alwaysOnTopIndicator.key}
+              className="bg-black bg-opacity-60 text-white text-lg px-4 py-2 rounded-md animate-zoom-in-out"
+            >
+              Always On Top: {alwaysOnTopIndicator.status ? 'On' : 'Off'}
+            </div>
+          </div>
+        )}
         <div className="absolute left-2 bottom-2">
           <RadialMenu
             reset={false}

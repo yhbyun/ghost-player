@@ -66,6 +66,13 @@ const api = {
     return () => {
       ipcRenderer.removeListener('playback-control', handler)
     }
+  },
+  onAlwaysOnTopStatusChanged: (callback: (status: boolean) => void): (() => void) => {
+    const handler = (_event, status: boolean): void => callback(status)
+    ipcRenderer.on('always-on-top-status-changed', handler)
+    return () => {
+      ipcRenderer.removeListener('always-on-top-status-changed', handler)
+    }
   }
 }
 

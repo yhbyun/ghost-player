@@ -298,6 +298,7 @@ app.whenReady().then(async () => {
         mainWindow?.setAlwaysOnTop(value as boolean, store.get('alwaysOnTopLevel'))
         const menuItem = menu.getMenuItemById('always-on-top-enabled')
         if (menuItem) menuItem.checked = value as boolean
+        mainWindow?.webContents.send('always-on-top-status-changed', value as boolean)
         break
       }
       case 'alwaysOnTopLevel': {

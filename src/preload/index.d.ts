@@ -20,6 +20,7 @@ declare global {
       openFile: () => Promise<void>
       sendPlaybackState: (isPlaying: boolean) => void
       onPlaybackControl: (callback: (action: 'play' | 'stop') => void) => () => void
+      onAlwaysOnTopStatusChanged: (callback: (status: boolean) => void) => () => void
     }
   }
 }
