@@ -5,24 +5,30 @@ export class ShortcutManager {
   private mainWindow: BrowserWindow
   private sideDock: SideDock
   private onSideDockToggle: (enabled: boolean) => void
+  private onToggleAlwaysOnTop: () => void
   private toggleSideDockShortcut: string
   private disableSideDockShortcut: string
   private focusWindowShortcut: string
+  private toggleAlwaysOnTopShortcut: string
 
   constructor(
     mainWindow: BrowserWindow,
     sideDock: SideDock,
     onSideDockToggle: (enabled: boolean) => void,
+    onToggleAlwaysOnTop: () => void,
     toggleSideDockShortcut: string,
     disableSideDockShortcut: string,
-    focusWindowShortcut: string
+    focusWindowShortcut: string,
+    toggleAlwaysOnTopShortcut: string
   ) {
     this.mainWindow = mainWindow
     this.sideDock = sideDock
     this.onSideDockToggle = onSideDockToggle
+    this.onToggleAlwaysOnTop = onToggleAlwaysOnTop
     this.toggleSideDockShortcut = toggleSideDockShortcut
     this.disableSideDockShortcut = disableSideDockShortcut
     this.focusWindowShortcut = focusWindowShortcut
+    this.toggleAlwaysOnTopShortcut = toggleAlwaysOnTopShortcut
   }
 
   registerShortcuts(): void {
@@ -61,6 +67,22 @@ export class ShortcutManager {
       console.error('Failed to register Focus Window shortcut:', this.focusWindowShortcut)
     } else {
       console.log('Successfully registered Focus Window shortcut:', this.focusWindowShortcut)
+    }
+
+    ret = globalShortcut.register(this.toggleAlwaysOnTopShortcut, () => {
+      this.onToggleAlwaysOnTop()
+    })
+
+    if (!ret) {
+      console.error(
+        'Failed to register Toggle Always On Top shortcut:',
+        this.toggleAlwaysOnTopShortcut
+      )
+    } else {
+      console.log(
+        'Successfully registered Toggle Always On Top shortcut:',
+        this.toggleAlwaysOnTopShortcut
+      )
     }
   }
 

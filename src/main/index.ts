@@ -372,9 +372,11 @@ app.whenReady().then(async () => {
       mainWindow!,
       sideDock!,
       () => store.set('isSideDockEnabled', true),
+      () => store.set('isAlwaysOnTop', !store.get('isAlwaysOnTop')),
       store.get('shortcuts.toggleSideDock'),
       store.get('shortcuts.disableSideDock'),
-      store.get('shortcuts.focusWindow')
+      store.get('shortcuts.focusWindow'),
+      store.get('shortcuts.toggleAlwaysOnTop')
     )
     shortcutManager.registerShortcuts()
 

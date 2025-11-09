@@ -138,12 +138,17 @@ export const store = new Store<StoreType>({
         focusWindow: {
           type: 'string',
           default: 'Shift+Cmd+0'
+        },
+        toggleAlwaysOnTop: {
+          type: 'string',
+          default: 'F4'
         }
       },
       default: {
         toggleSideDock: 'F5',
         disableSideDock: 'Option+F5',
-        focusWindow: 'Shift+Cmd+0'
+        focusWindow: 'Shift+Cmd+0',
+        toggleAlwaysOnTop: 'F4'
       }
     },
     disableMouse: {
