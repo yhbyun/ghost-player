@@ -372,8 +372,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         showSeekIndicator('forward')
       } else if (e.key === 'ArrowUp') {
         player.volume(Math.min(1, player.volume() + 0.1))
+        handleVolumeChange()
       } else if (e.key === 'ArrowDown') {
         player.volume(Math.max(0, player.volume() - 0.1))
+        handleVolumeChange()
       }
     }
 
