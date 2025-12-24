@@ -58,6 +58,31 @@ export function setupMenu(getMainWindow: () => BrowserWindow | null): Menu {
           }
         },
         { type: 'separator' },
+        {
+          label: 'Open URL...',
+          accelerator: 'CommandOrControl+U',
+          click: () => {
+            const mainWindow = getMainWindow()
+            if (!mainWindow) return
+
+            prompt({
+              title: 'Open URL',
+              label: 'Enter URL:',
+              inputAttrs: {
+                type: 'url',
+                placeholder: 'https://example.com'
+              },
+              type: 'input'
+            })
+              .then((value: string | null) => {
+                if (value) {
+                  mainWindow.webContents.send('open-url', value)
+                }
+              })
+              .catch(console.error)
+          }
+        },
+        { type: 'separator' },
         { role: 'quit' }
       ]
     },

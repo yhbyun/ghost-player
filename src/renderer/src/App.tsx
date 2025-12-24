@@ -47,6 +47,18 @@ function App(): React.JSX.Element {
       setContent({ type: 'video', data: { type: 'native', videoSource: url } })
     })
 
+    const cleanupOnOpenUrl = window.api.onOpenUrl((url) => {
+      // Create a custom service object for the URL
+      const customService: Service = {
+        name: 'Custom URL',
+        icon: '', // Will use a default or empty icon
+        url: url,
+        color: '#4a90e2' // Default blue color
+      }
+      setContent({ type: 'service', data: customService })
+      window.api.setLastContent({ type: 'service', data: { name: 'Custom URL' } })
+    })
+
     const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
       console.log('cleanupOnOpenFile', playParams)
       const newContent = { type: 'video' as const, data: playParams }
@@ -71,6 +83,7 @@ function App(): React.JSX.Element {
     return () => {
       cleanupOnChangeService()
       cleanupOnOpenLocation()
+      cleanupOnOpenUrl()
       cleanupOnOpenFile()
       cleanupOnPlaybackControl()
       cleanupOnAlwaysOnTopStatusChanged()

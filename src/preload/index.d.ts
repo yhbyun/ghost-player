@@ -11,6 +11,7 @@ declare global {
       setLastContent: (content: Content) => void
       onChangeService: (callback: (service: Service) => void) => () => void
       onOpenLocation: (callback: (url: string) => void) => () => void
+      onOpenUrl: (callback: (url: string) => void) => () => void
       onOpenFile: (callback: (playParams: PlayParams) => void) => () => void
       notifyMouseEvent: (event: 'enter' | 'leave') => void
       setSetting: (key: string, value: unknown) => void

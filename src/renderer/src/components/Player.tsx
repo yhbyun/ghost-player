@@ -93,7 +93,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
       {loading && (
         <div className="loader">
           <div className="ripple" style={{ backgroundColor: service.color }} />
-          <img src={service.icon} alt={service.name} />
+          {service.icon && <img src={service.icon} alt={service.name} />}
         </div>
       )}
       <webview

@@ -28,6 +28,13 @@ const api = {
       ipcRenderer.removeListener('open-location', handler)
     }
   },
+  onOpenUrl: (callback: (url: string) => void): (() => void) => {
+    const handler = (_event, url: string): void => callback(url)
+    ipcRenderer.on('open-url', handler)
+    return () => {
+      ipcRenderer.removeListener('open-url', handler)
+    }
+  },
   onOpenFile: (callback: (playParams: PlayParams) => void): (() => void) => {
     const handler = (_event, playParams: PlayParams): void => callback(playParams)
     ipcRenderer.on('open-file', handler)
