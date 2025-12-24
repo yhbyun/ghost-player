@@ -7,5 +7,5 @@ export interface PlayParams {
 }
 
 export type Content =
-  | { type: 'service'; data: { name: string } }
+  | { type: 'service'; data: { name: string; url?: string } }
   | { type: 'video'; data: PlayParams }

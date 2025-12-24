@@ -38,7 +38,8 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
     window.api.setLastContent({
       type: 'service',
       data: {
-        name: service.name
+        name: service.name,
+        ...(service.url && service.name === 'Custom URL' ? { url: service.url } : {})
       }
     })
 

@@ -28,9 +28,21 @@ function App(): React.JSX.Element {
       const initialContent = await window.api.getInitialContent()
       if (initialContent) {
         if (initialContent.type === 'service') {
-          const service = services.find((s) => s.name === initialContent.data.name)
-          if (service) {
-            setContent({ type: 'service', data: service })
+          // Check if it's a custom URL
+          if (initialContent.data.url) {
+            const customService: Service = {
+              name: 'Custom URL',
+              icon: '',
+              url: initialContent.data.url,
+              color: '#4a90e2'
+            }
+            setContent({ type: 'service', data: customService })
+          } else {
+            // Built-in service
+            const service = services.find((s) => s.name === initialContent.data.name)
+            if (service) {
+              setContent({ type: 'service', data: service })
+            }
           }
         } else {
           setContent(initialContent)
@@ -56,7 +68,7 @@ function App(): React.JSX.Element {
         color: '#4a90e2' // Default blue color
       }
       setContent({ type: 'service', data: customService })
-      window.api.setLastContent({ type: 'service', data: { name: 'Custom URL' } })
+      window.api.setLastContent({ type: 'service', data: { name: 'Custom URL', url: url } })
     })
 
     const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
