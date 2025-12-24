@@ -456,7 +456,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         )}
       </div>
       {seekIndicator && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 ${
+            seekIndicator.type === 'backward' ? 'left-[10%] -translate-x-1/2' : 'right-[10%] translate-x-1/2'
+          }`}
+        >
           <div
             key={seekIndicator.key}
             className="bg-black bg-opacity-60 text-white p-5 w-20 h-20 rounded-full flex items-center justify-center animate-zoom-in-out"
