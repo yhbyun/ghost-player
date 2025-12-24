@@ -207,35 +207,33 @@ const SettingsMenu: React.FC<SettingsMenuProps> = () => {
             )}
           </div>
           <div className="settings-section">
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.disableMouse}
-                onChange={(e) => handleSettingChange('disableMouse', e.target.checked)}
-              />
-              Disable Mouse
-            </label>
-          </div>
-          <div className="settings-section">
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.openDevToolsOnStart}
-                onChange={(e) => handleSettingChange('openDevToolsOnStart', e.target.checked)}
-              />
-              Open DevTools on Start
-            </label>
-          </div>
-          <div className="settings-section">
-            <h3>Audio Visualizer</h3>
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.isVisualizerEnabled}
-                onChange={(e) => handleSettingChange('isVisualizerEnabled', e.target.checked)}
-              />
-              Enabled
-            </label>
+            <h3>General</h3>
+            <div className="settings-subsection flex flex-col gap-2">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.disableMouse}
+                  onChange={(e) => handleSettingChange('disableMouse', e.target.checked)}
+                />
+                Disable Mouse
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.openDevToolsOnStart}
+                  onChange={(e) => handleSettingChange('openDevToolsOnStart', e.target.checked)}
+                />
+                Open DevTools on Start
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={settings.isVisualizerEnabled}
+                  onChange={(e) => handleSettingChange('isVisualizerEnabled', e.target.checked)}
+                />
+                Audio Visualizer
+              </label>
+            </div>
           </div>
           <div className="settings-section">
             <h3>Transcription</h3>
