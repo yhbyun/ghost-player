@@ -7,56 +7,78 @@ import { logger } from '../logger'
 
 let httpServer: VideoServer | undefined
 
-export const registerLocalFileProtocols = (): void => {
-  protocol.handle('local-video', async (request) => {
-    const filePath = decodeURIComponent(request.url.slice('local-video:'.length))
+import { pathToFileURL } from 'url'
+import { net } from 'electron'
 
+export const registerLocalFileProtocols = (): void => {
+  // local-video 프로토콜: 대용량 비디오 파일을 스트리밍하기 위해 최적화된 Range 처리 로직 구현
+  protocol.handle('local-video', async (request) => {
     try {
+      // url.pathname을 쓰면 macOS에서 /Users/.. 의 Users 부분이 host로 오인되어 누락될 수 있습니다.
+      let filePath = decodeURIComponent(request.url.slice(request.url.indexOf(':') + 1))
+      filePath = filePath.replace(/^[/]+/, '/')
+      if (process.platform !== 'win32' && !filePath.startsWith('/')) {
+        filePath = '/' + filePath
+      }
+
       const stat = await fs.stat(filePath)
       const fileSize = stat.size
       const range = request.headers.get('range')
 
       if (range) {
-        logger.log('video', `Serving range request: ${range} for ${filePath}`)
         const parts = range.replace(/bytes=/, '').split('-')
         const start = parseInt(parts[0], 10)
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1
         const chunksize = end - start + 1
         const file = createReadStream(filePath, { start, end })
+
+        logger.log('video', `Serving range request: ${start}-${end}/${fileSize}`)
+
         const headers = {
           'Content-Range': `bytes ${start}-${end}/${fileSize}`,
           'Accept-Ranges': 'bytes',
           'Content-Length': chunksize.toString(),
-          'Content-Type': 'video/mp4'
+          'Content-Type': 'video/mp4',
+          'Access-Control-Allow-Origin': '*'
         }
-        return new Response(file, { status: 206, headers })
+        return new Response(file as any, { status: 206, headers })
       } else {
-        logger.log('video', `Serving full file: ${filePath}`)
+        logger.log('video', `Serving full file: ${fileSize} bytes`)
+        const file = createReadStream(filePath)
         const headers = {
           'Content-Length': fileSize.toString(),
           'Content-Type': 'video/mp4',
-          'Accept-Ranges': 'bytes'
+          'Accept-Ranges': 'bytes',
+          'Access-Control-Allow-Origin': '*'
         }
-        const file = createReadStream(filePath)
-        return new Response(file, { status: 200, headers })
+        return new Response(file as any, { status: 200, headers })
       }
     } catch (error) {
-      logger.error('video', `Failed to fetch local video at path: ${filePath}`, error)
+      logger.error('video', `Failed to handle local-video request: ${request.url}`, error)
       return new Response('Not Found', { status: 404 })
     }
   })
 
+  // local-subtitle 프로토콜
   protocol.handle('local-subtitle', async (request) => {
-    const filePath = decodeURIComponent(request.url.slice('local-subtitle:'.length))
     try {
-      const data = await fs.readFile(filePath)
-      const headers = {
-        'Content-Type': 'text/vtt',
-        'Access-Control-Allow-Origin': '*'
-      }
-      return new Response(data, { status: 200, headers })
+      const filePath = decodeURIComponent(request.url.slice('local-subtitle:'.length))
+      await fs.access(filePath)
+
+      const fileUrl = pathToFileURL(filePath).toString()
+      const response = await net.fetch(fileUrl)
+
+      const newHeaders = new Headers(response.headers)
+      newHeaders.set('Access-Control-Allow-Origin', '*')
+      newHeaders.set('Content-Type', 'text/vtt')
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      })
     } catch (error) {
-      logger.error('video', `Failed to fetch local subtitle at path: ${filePath}`, error)
+      logger.error('video', `Failed to handle local-subtitle request: ${request.url}`, error)
       return new Response('Not Found', { status: 404 })
     }
   })

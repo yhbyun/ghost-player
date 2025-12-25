@@ -3,9 +3,9 @@ import { URL } from 'url'
 import fs from 'fs'
 import { logger } from '../logger'
 import ffmpeg from 'fluent-ffmpeg'
-import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
+import { getFfmpegPath } from './ffmpeg-path'
 
-ffmpeg.setFfmpegPath(ffmpegPath)
+ffmpeg.setFfmpegPath(getFfmpegPath())
 
 export interface VideoSourceInfo {
   videoSourcePath: string
@@ -72,7 +72,7 @@ export default class VideoServer {
             return
           }
 
-          const requestUrl = new URL(request.url, `http://${request.headers.host}`)
+          const requestUrl = new URL(request.url || '', `http://${request.headers.host}`)
 
           if (requestUrl.pathname === '/subtitle') {
             if (this.subtitlePath) {
@@ -115,9 +115,12 @@ export default class VideoServer {
               : 'libx264'
           const audioCodec = this.videoSourceInfo.checkResult.audioCodecSupport ? 'copy' : 'aac'
 
+          logger.log('video', `Configuring FFmpeg stream. VideoCodec: ${videoCodec}, AudioCodec: ${audioCodec}`)
+
           // Set headers for streaming
           response.writeHead(200, {
             'Content-Type': 'video/mp4',
+            'Access-Control-Allow-Origin': '*',
             Connection: 'keep-alive'
           })
 
@@ -129,14 +132,16 @@ export default class VideoServer {
             .audioCodec(audioCodec)
             .format('mp4')
             .addOptions(['-movflags frag_keyframe+empty_moov']) // Essential for streaming
-            .on('start', (cmd) => logger.log('video', `[FFMPEG] Spawned: ${cmd}`))
+            .on('start', (cmd) => {
+              logger.log('video', `[FFMPEG] Spawned: ${cmd}`)
+            })
             .on('error', (err, stdout, stderr) => {
               if (err.message.includes('SIGTERM')) {
                 logger.log('video', '[FFMPEG] Process killed intentionally.')
               } else {
-                logger.error('[FFMPEG] Error:', err.message)
-                logger.error('[FFMPEG] STDOUT:', stdout)
-                logger.error('[FFMPEG] STDERR:', stderr)
+                logger.error('video', '[FFMPEG] Error:', err.message)
+                logger.error('video', '[FFMPEG] STDOUT:', stdout)
+                logger.error('video', '[FFMPEG] STDERR:', stderr)
               }
             })
             .on('end', () => {

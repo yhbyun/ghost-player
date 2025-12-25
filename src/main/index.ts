@@ -92,6 +92,7 @@ function createWindow(onReadyToShow: () => void): void {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+
   if (store.get('openDevToolsOnStart')) {
     mainWindow.webContents.openDevTools()
   }
@@ -108,7 +109,18 @@ protocol.registerSchemesAsPrivileged([
       standard: true,
       supportFetchAPI: true,
       bypassCSP: true,
-      stream: true
+      stream: true,
+      corsEnabled: true
+    }
+  },
+  {
+    scheme: 'local-subtitle',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      bypassCSP: true,
+      corsEnabled: true
     }
   }
 ])
@@ -148,7 +160,7 @@ app.whenReady().then(async () => {
   // Pre-load the local transcription model
   localTranscriber.transcribe(Buffer.from([]))
 
-  if (is.dev && process.platform === 'darwin') {
+  if (is.dev && process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(icon)
   }
 

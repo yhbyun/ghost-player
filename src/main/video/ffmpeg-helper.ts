@@ -1,4 +1,4 @@
-import { path as ffmpegPath } from '@ffmpeg-installer/ffmpeg'
+import { getFfmpegPath } from './ffmpeg-path'
 import { exec, ExecException } from 'child_process'
 
 /**
@@ -49,7 +49,7 @@ function transformDuration(duration: string | undefined): number {
 export const videoSupport = (videoPath: string): Promise<VideoSupportResult> => {
   return new Promise<VideoSupportResult>((resolve, reject) => {
     // Use quotes to handle paths with spaces
-    const command = `"${ffmpegPath}" -i "${videoPath}"`
+    const command = `"${getFfmpegPath()}" -i "${videoPath}"`
 
     // ffmpeg prints information to stderr and exits with a non-zero code when using -i without an output file.
     // Therefore, we parse stderr for information.

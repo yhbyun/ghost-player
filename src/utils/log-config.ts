@@ -12,5 +12,7 @@ export const activeCategories: string[] = [
   'captioning',
   'LocalTranscriber',
   'adblocker'
-  // Add other categories here to enable them, e.g., 'api', 'lifecycle'
+  // 'ffmpeg',
+  // 'lifecycle'
+  // Add other categories here to enable them, e.g., 'api'
 ]

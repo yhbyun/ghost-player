@@ -66,6 +66,9 @@
     "vite": "^7.1.6"
   },
   "build": {
+    "asarUnpack": [
+      "**/node_modules/@ffmpeg-installer/ffmpeg/bin/**"
+    ],
     "electronDownload": {
       "mirror": "https://github.com/castlabs/electron-releases/releases/download/v"
     }

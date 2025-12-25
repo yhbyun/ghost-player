@@ -18,7 +18,7 @@ const bufferToWav = (buffer: Float32Array[], sampleRate: number): Blob => {
   }
 
   const dataView = encodeWAV(result, sampleRate, numChannels)
-  return new Blob([dataView], { type: 'audio/wav' })
+  return new Blob([dataView.buffer], { type: 'audio/wav' })
 }
 
 const encodeWAV = (samples: Float32Array, sampleRate: number, numChannels: number): DataView => {
@@ -171,9 +171,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       console.log('[Captioning] Transcription received:', transcription.trim())
       setCaptionText(transcription.trim())
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('[Captioning] Error transcribing audio:', error)
-      if (error.message.includes('401')) {
+      const errMessage = error instanceof Error ? error.message : String(error)
+      if (errMessage.includes('401')) {
         setCaptionText('Invalid Whisper API Key. Please check settings.')
         setIsCaptioningEnabled(false) // Turn off captioning
       } else if (!captionText.startsWith('Invalid')) {
@@ -274,7 +275,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       sourceNodeRef.current = audioContextRef.current.createMediaElementSource(videoHtmlElement)
 
       try {
-        await audioContextRef.current.audioWorklet.addModule('/caption-processor.js')
+        console.log('[VideoPlayer] Adding AudioWorklet module...')
+        // Create an absolute URL for the worklet to ensure it loads in production
+        const workletUrl = new URL('./caption-processor.js', window.location.href).href
+        console.log(`[VideoPlayer] Worklet URL: ${workletUrl}`)
+
+        await audioContextRef.current.audioWorklet.addModule(workletUrl)
         workletNodeRef.current = new AudioWorkletNode(audioContextRef.current, 'caption-processor')
 
         workletNodeRef.current.port.onmessage = (event: MessageEvent<Float32Array>) => {
@@ -283,9 +289,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         analyserNodeRef.current = audioContextRef.current.createAnalyser()
 
-        sourceNodeRef.current.connect(analyserNodeRef.current)
-        sourceNodeRef.current.connect(workletNodeRef.current)
-        analyserNodeRef.current.connect(audioContextRef.current.destination)
+        if (sourceNodeRef.current && analyserNodeRef.current && workletNodeRef.current) {
+          sourceNodeRef.current.connect(analyserNodeRef.current)
+          sourceNodeRef.current.connect(workletNodeRef.current)
+          analyserNodeRef.current.connect(audioContextRef.current.destination)
+        }
       } catch (error) {
         console.error('Error adding AudioWorklet module or creating node:', error)
       }
@@ -307,9 +315,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const player = videojs(videoElement, options, () => {
-      console.log(`player is ready. duration: ${duration}`)
+      console.log(`[VideoPlayer] player is ready. duration: ${duration}, src: ${src}, type: ${type}`)
+
+
       player.on('error', () => {
-        console.error('Video.js Error:', player.error())
+        console.error('[VideoJS] Error:', player.error())
       })
 
       if (currentTime) {
