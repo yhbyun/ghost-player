@@ -7,8 +7,7 @@ import { logger } from '../logger'
 
 let httpServer: VideoServer | undefined
 
-import { pathToFileURL } from 'url'
-import { net } from 'electron'
+import { convertToVtt } from './subtitle-converter'
 
 export const registerLocalFileProtocols = (): void => {
   // local-video 프로토콜: 대용량 비디오 파일을 스트리밍하기 위해 최적화된 Range 처리 로직 구현
@@ -59,23 +58,23 @@ export const registerLocalFileProtocols = (): void => {
     }
   })
 
-  // local-subtitle 프로토콜
+  // local-subtitle 프로토콜: SRT, SMI 자막을 VTT로 자동 변환하여 지원
   protocol.handle('local-subtitle', async (request) => {
+    logger.log('video', `Received local-subtitle request: ${request.url}`)
     try {
       const filePath = decodeURIComponent(request.url.slice('local-subtitle:'.length))
-      await fs.access(filePath)
+      logger.log('video', `Converting subtitle: ${filePath}`)
+      const vttContent = await convertToVtt(filePath)
+      logger.log('video', `Conversion complete. VTT length: ${vttContent.length}`)
 
-      const fileUrl = pathToFileURL(filePath).toString()
-      const response = await net.fetch(fileUrl)
+      const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/vtt; charset=utf-8'
+      }
 
-      const newHeaders = new Headers(response.headers)
-      newHeaders.set('Access-Control-Allow-Origin', '*')
-      newHeaders.set('Content-Type', 'text/vtt')
-
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: newHeaders
+      return new Response(vttContent, {
+        status: 200,
+        headers
       })
     } catch (error) {
       logger.error('video', `Failed to handle local-subtitle request: ${request.url}`, error)
@@ -85,21 +84,25 @@ export const registerLocalFileProtocols = (): void => {
 }
 
 const findSubtitle = async (videoFile: string): Promise<string | undefined> => {
-  const subtitleExtensions = ['.srt', '.vtt', '.smi']
+  const subtitleExtensions = ['.srt', '.vtt', '.smi', '.SRT', '.VTT', '.SMI']
   const videoFileWithoutExt = videoFile.substring(0, videoFile.lastIndexOf('.'))
+  logger.log('video', `Searching subtitles for: ${videoFileWithoutExt}`)
   for (const ext of subtitleExtensions) {
     const subtitleFile = videoFileWithoutExt + ext
     try {
       await fs.access(subtitleFile)
+      logger.log('video', `Found subtitle: ${subtitleFile}`)
       return subtitleFile
     } catch {
       // file not found
     }
   }
+  logger.log('video', 'No subtitle file found.')
   return undefined
 }
 
 export const playVideo = async (mainWindow: BrowserWindow, videoFile: string): Promise<void> => {
+  logger.log('video', `playVideo called for: ${videoFile}`)
   const subtitleFile = await findSubtitle(videoFile)
 
   try {
@@ -111,10 +114,10 @@ export const playVideo = async (mainWindow: BrowserWindow, videoFile: string): P
       }
       const playParams: PlayParams = {
         type: 'native',
-        videoSource: 'local-video:' + videoFile
+        videoSource: 'local-video:' + encodeURI(videoFile)
       }
       if (subtitleFile) {
-        playParams.subtitleSource = 'local-subtitle:' + subtitleFile
+        playParams.subtitleSource = 'local-subtitle:' + encodeURI(subtitleFile)
       }
       console.log(playParams)
       mainWindow?.webContents.send('open-file', playParams)

@@ -18,7 +18,7 @@ const bufferToWav = (buffer: Float32Array[], sampleRate: number): Blob => {
   }
 
   const dataView = encodeWAV(result, sampleRate, numChannels)
-  return new Blob([dataView.buffer], { type: 'audio/wav' })
+  return new Blob([dataView.buffer as ArrayBuffer], { type: 'audio/wav' })
 }
 
 const encodeWAV = (samples: Float32Array, sampleRate: number, numChannels: number): DataView => {
@@ -132,16 +132,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const processAudioForCaptioning = useCallback(async (): Promise<void> => {
     if (audioDataBufferRef.current.length === 0) {
-      console.log('[Captioning] No audio data in buffer to process.')
       return
     }
 
     setIsProcessingAudio(true)
-    console.log(
-      `[Captioning] Processing audio buffer of size: ${audioDataBufferRef.current.length}`
-    )
 
-    const transcriptionProvider = await window.api.getSetting('transcriptionProvider', 'remote')
+    const transcriptionProvider = (await window.api.getSetting(
+      'transcriptionProvider',
+      'remote'
+    )) as string
     let apiKey = ''
 
     if (transcriptionProvider === 'remote') {
@@ -152,31 +151,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         setIsCaptioningEnabled(false)
         return
       }
-      console.log('[Captioning] Remote API key found. Proceeding with API call.')
-    } else {
-      console.log('[Captioning] Using local transcription. API key not required.')
     }
 
     const audioBuffer = [...audioDataBufferRef.current]
     audioDataBufferRef.current = []
 
-    const sampleRate = 16000 // The audio is now resampled to 16kHz in the worklet
+    const sampleRate = 16000
     const wavBlob = bufferToWav(audioBuffer, sampleRate)
     const wavBuffer = await wavBlob.arrayBuffer()
     const audioData = new Uint8Array(wavBuffer)
 
     try {
-      console.log('[Captioning] Calling main process for transcription...')
       const transcription = await window.api.transcribeAudio(audioData, apiKey)
-
-      console.log('[Captioning] Transcription received:', transcription.trim())
       setCaptionText(transcription.trim())
     } catch (error: unknown) {
       console.error('[Captioning] Error transcribing audio:', error)
       const errMessage = error instanceof Error ? error.message : String(error)
       if (errMessage.includes('401')) {
         setCaptionText('Invalid Whisper API Key. Please check settings.')
-        setIsCaptioningEnabled(false) // Turn off captioning
+        setIsCaptioningEnabled(false)
       } else if (!captionText.startsWith('Invalid')) {
         setCaptionText('Error transcribing audio.')
       }
@@ -191,7 +184,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (willBeEnabled) {
       setCaptionText('Starting live captions...')
     }
-    console.log(`[Captioning] Live captions ${willBeEnabled ? 'enabled' : 'disabled'}.`)
   }
 
   useEffect(() => {
@@ -234,7 +226,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     videoElement.classList.add('vjs-big-play-centered')
     videoRef.current.appendChild(videoElement)
 
-    const options: videojs.PlayerOptions = {
+    const options: any = {
       autoplay: true,
       controls: true,
       responsive: true,
@@ -262,24 +254,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const startAudioCapture = async (videoHtmlElement: HTMLVideoElement): Promise<void> => {
-      const AudioContext =
-        window.AudioContext ||
-        (window as Window & typeof globalThis & { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext
-      if (!AudioContext) {
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext
+      if (!AudioContextClass) {
         console.error('Web Audio API is not supported in this browser')
         return
       }
 
-      audioContextRef.current = new AudioContext()
+      audioContextRef.current = new AudioContextClass()
       sourceNodeRef.current = audioContextRef.current.createMediaElementSource(videoHtmlElement)
 
       try {
-        console.log('[VideoPlayer] Adding AudioWorklet module...')
-        // Create an absolute URL for the worklet to ensure it loads in production
         const workletUrl = new URL('./caption-processor.js', window.location.href).href
-        console.log(`[VideoPlayer] Worklet URL: ${workletUrl}`)
-
         await audioContextRef.current.audioWorklet.addModule(workletUrl)
         workletNodeRef.current = new AudioWorkletNode(audioContextRef.current, 'caption-processor')
 
@@ -289,10 +275,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         analyserNodeRef.current = audioContextRef.current.createAnalyser()
 
-        if (sourceNodeRef.current && analyserNodeRef.current && workletNodeRef.current) {
-          sourceNodeRef.current.connect(analyserNodeRef.current)
-          sourceNodeRef.current.connect(workletNodeRef.current)
-          analyserNodeRef.current.connect(audioContextRef.current.destination)
+        const source = sourceNodeRef.current
+        const analyser = analyserNodeRef.current
+        const worklet = workletNodeRef.current
+        const ctx = audioContextRef.current
+
+        if (source && analyser && worklet && ctx) {
+          source.connect(analyser)
+          source.connect(worklet)
+          analyser.connect(ctx.destination)
         }
       } catch (error) {
         console.error('Error adding AudioWorklet module or creating node:', error)
@@ -315,21 +306,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const player = videojs(videoElement, options, () => {
-      console.log(`[VideoPlayer] player is ready. duration: ${duration}, src: ${src}, type: ${type}`)
-
-
-      player.on('error', () => {
-        console.error('[VideoJS] Error:', player.error())
-      })
-
       if (currentTime) {
         player.currentTime(currentTime)
       }
 
       player.on('timeupdate', () => {
         const now = Date.now()
-        if (onTimeUpdate && now - lastUpdateTimeRef.current > 5000) {
-          onTimeUpdate(player.currentTime())
+        const currentPos = player.currentTime()
+        if (onTimeUpdate && typeof currentPos === 'number' && now - lastUpdateTimeRef.current > 5000) {
+          onTimeUpdate(currentPos)
           lastUpdateTimeRef.current = now
         }
       })
@@ -340,6 +325,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       player.on('pause', () => {
         onPause?.()
+      })
+
+      player.on('loadedmetadata', () => {
+        const tracks = player.remoteTextTracks()
+        if (tracks) {
+          for (let i = 0; i < (tracks as any).length; i++) {
+            const track = (tracks as any)[i]
+            if (track.kind === 'subtitles') {
+              track.mode = 'showing'
+            }
+          }
+        }
       })
 
       if (!isCapturingAudioRef.current) {
@@ -355,13 +352,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     playerRef.current = player
 
     const showSeekIndicator = (direction: 'forward' | 'backward'): void => {
-      if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current)
+      if (seekTimeoutRef.current) window.clearTimeout(seekTimeoutRef.current)
       setSeekIndicator({ type: direction, key: Date.now() })
       seekTimeoutRef.current = window.setTimeout(() => setSeekIndicator(null), 800)
     }
 
     const showPlayPauseIndicator = (type: 'play' | 'pause'): void => {
-      if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current)
+      if (playPauseTimeoutRef.current) window.clearTimeout(playPauseTimeoutRef.current)
       setPlayPauseIndicator({ type, key: Date.now() })
       playPauseTimeoutRef.current = window.setTimeout(() => setPlayPauseIndicator(null), 800)
     }
@@ -390,8 +387,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const handleVolumeChange = (): void => {
-      if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
-      setVolumeIndicator({ volume: Math.round(player.volume() * 100), key: Date.now() })
+      if (volumeTimeoutRef.current) window.clearTimeout(volumeTimeoutRef.current)
+      const currentVolume = player.volume()
+      if (typeof currentVolume === 'number') {
+        setVolumeIndicator({ volume: Math.round(currentVolume * 100), key: Date.now() })
+      }
       volumeTimeoutRef.current = window.setTimeout(() => setVolumeIndicator(null), 800)
     }
 
@@ -406,12 +406,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         playerRef.current = null
       }
       window.removeEventListener('keydown', handleKeyDown)
-      if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current)
-      if (volumeTimeoutRef.current) clearTimeout(volumeTimeoutRef.current)
-      if (playPauseTimeoutRef.current) clearTimeout(playPauseTimeoutRef.current)
+      if (seekTimeoutRef.current) window.clearTimeout(seekTimeoutRef.current)
+      if (volumeTimeoutRef.current) window.clearTimeout(volumeTimeoutRef.current)
+      if (playPauseTimeoutRef.current) window.clearTimeout(playPauseTimeoutRef.current)
       stopAudioCapture()
     }
   }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef, currentTime])
+
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {
       return null

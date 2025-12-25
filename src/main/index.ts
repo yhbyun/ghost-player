@@ -7,7 +7,7 @@ import { store } from './store'
 import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
 import { ShortcutManager } from './shortcuts'
-import { registerLocalFileProtocols } from './video/video-playback'
+import { registerLocalFileProtocols, playVideo } from './video/video-playback'
 import fetch from 'node-fetch'
 import FormData from 'form-data'
 import { localTranscriber } from './local-transcriber'
@@ -91,7 +91,6 @@ function createWindow(onReadyToShow: () => void): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-
 
   if (store.get('openDevToolsOnStart')) {
     mainWindow.webContents.openDevTools()
@@ -228,11 +227,7 @@ app.whenReady().then(async () => {
     })
 
     if (!result.canceled && result.filePaths.length > 0) {
-      const videoSource = result.filePaths[0]
-      mainWindow.webContents.send('open-file', {
-        type: 'native',
-        videoSource: `local-video:${videoSource}`
-      })
+      playVideo(mainWindow, result.filePaths[0])
     }
   })
 
