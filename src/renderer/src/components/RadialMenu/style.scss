@@ -81,7 +81,8 @@ $d6: ($r * 5);
 
   // Triggers
   .radial-init li {
-    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   // 6개 중 안 사용하는 나머지는 hidden
