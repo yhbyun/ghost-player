@@ -1,7 +1,14 @@
 import React from 'react'
 import { PlaylistItem } from '../../../types'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlay, faTrash, faTimes, faStepForward, faStepBackward, faPlus } from '@fortawesome/free-solid-svg-icons'
+import {
+  faPlay,
+  faTrash,
+  faTimes,
+  faStepForward,
+  faStepBackward,
+  faPlus
+} from '@fortawesome/free-solid-svg-icons'
 import './PlaylistSidebar.scss'
 
 interface PlaylistSidebarProps {

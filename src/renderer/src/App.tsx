@@ -95,7 +95,9 @@ function App(): React.JSX.Element {
       }
 
       setPlaylist((prev) => {
-        const alreadyExists = prev.some((item) => item.params.videoSource === playParams.videoSource)
+        const alreadyExists = prev.some(
+          (item) => item.params.videoSource === playParams.videoSource
+        )
         if (alreadyExists) return prev
         const newPlaylist = [...prev, newItem]
 

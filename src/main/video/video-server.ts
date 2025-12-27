@@ -115,7 +115,10 @@ export default class VideoServer {
               : 'libx264'
           const audioCodec = this.videoSourceInfo.checkResult.audioCodecSupport ? 'copy' : 'aac'
 
-          logger.log('video', `Configuring FFmpeg stream. VideoCodec: ${videoCodec}, AudioCodec: ${audioCodec}`)
+          logger.log(
+            'video',
+            `Configuring FFmpeg stream. VideoCodec: ${videoCodec}, AudioCodec: ${audioCodec}`
+          )
 
           // Set headers for streaming
           response.writeHead(200, {

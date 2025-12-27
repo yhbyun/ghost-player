@@ -93,7 +93,8 @@ function decodeBuffer(buffer: Buffer): string {
   // BOM Check
   if (buffer[0] === 0xff && buffer[1] === 0xfe) return iconv.decode(buffer, 'utf-16le')
   if (buffer[0] === 0xfe && buffer[1] === 0xff) return iconv.decode(buffer, 'utf-16be')
-  if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf) return buffer.toString('utf-8', 3)
+  if (buffer[0] === 0xef && buffer[1] === 0xbb && buffer[2] === 0xbf)
+    return buffer.toString('utf-8', 3)
 
   // Try decoding with EUC-KR first if it looks like SAMI in EUC-KR
   const eucKrString = iconv.decode(buffer, 'euc-kr')

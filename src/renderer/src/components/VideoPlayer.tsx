@@ -253,8 +253,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const startAudioCapture = async (videoHtmlElement: HTMLVideoElement): Promise<void> => {
-      const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
       if (!AudioContextClass) {
         console.error('Web Audio API is not supported in this browser')
         return
@@ -427,7 +426,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (playPauseTimeoutRef.current) window.clearTimeout(playPauseTimeoutRef.current)
       stopAudioCapture()
     }
-  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, onEnded, playerRef, currentTime])
+  }, [
+    src,
+    type,
+    duration,
+    subtitleSrc,
+    onTimeUpdate,
+    onPlay,
+    onPause,
+    onEnded,
+    playerRef,
+    currentTime
+  ])
 
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {
