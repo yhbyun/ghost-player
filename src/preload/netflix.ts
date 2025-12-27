@@ -16,6 +16,20 @@ function mainWorldLogic(): void {
   const capturedSubtitles: SubtitleLine[] = []
   const activeSecondarySubtitles: SubtitleLine[] = []
 
+  const resetSubtitles = (): void => {
+    capturedSubtitles.length = 0
+    activeSecondarySubtitles.length = 0
+    const countSpan = document.getElementById('dual-sub-count')
+    const btn = document.getElementById('dual-sub-lock-btn')
+    if (countSpan) countSpan.innerText = '0 items'
+    if (btn) btn.innerText = 'Lock Subtitles'
+    const display = document.getElementById('dual-sub-text')
+    if (display) {
+      display.innerText = ''
+      display.style.opacity = '0'
+    }
+  }
+
   const parseTime = (timeStr: string): number => {
     if (!timeStr) return 0
 
@@ -126,6 +140,19 @@ function mainWorldLogic(): void {
     })
     return originalSend.apply(this, [body])
   }
+
+  // Hook History for navigation
+  const wrapHistory = (type: 'pushState' | 'replaceState'): void => {
+    const original = history[type]
+    history[type] = function (...args) {
+      const result = original.apply(this, args)
+      resetSubtitles()
+      return result
+    }
+  }
+  wrapHistory('pushState')
+  wrapHistory('replaceState')
+  window.addEventListener('popstate', () => resetSubtitles())
 
   // UI Construction
   const constructUI = (): void => {
