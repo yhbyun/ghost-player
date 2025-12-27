@@ -76,7 +76,10 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
   }
 
   const menuItems = [
-    { service: 'YouTube', icon: <FontAwesomeIcon icon={faYoutube} /> },
+    {
+      service: 'YouTube',
+      icon: <FontAwesomeIcon icon={faYoutube} style={{ color: '#FF0000' }} />
+    },
     {
       service: 'Netflix',
       icon: (
