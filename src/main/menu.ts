@@ -104,7 +104,21 @@ export function setupMenu(getMainWindow: () => BrowserWindow | null): Menu {
       role: 'editMenu'
     },
     {
-      role: 'viewMenu'
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        {
+          role: 'togglefullscreen',
+          ...(process.platform === 'darwin' ? { accelerator: 'Cmd+F' } : {})
+        }
+      ]
     },
     {
       role: 'windowMenu'
