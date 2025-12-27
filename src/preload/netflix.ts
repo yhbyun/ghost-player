@@ -107,8 +107,45 @@ function mainWorldLogic(): void {
         // console.log(`[Netflix Dual Subtitles] Region ${id}: origin=${origin}, align=${displayAlign} => ${pos}`)
       }
 
+      // Parse Styles
+      const styleMap = new Map<string, boolean>()
+      // Check both 'styling' and direct 'style' tags just in case
+      const styles = xmlDoc.getElementsByTagName('style')
+      for (let i = 0; i < styles.length; i++) {
+        const s = styles[i]
+        const id = s.getAttribute('xml:id') || s.getAttribute('id')
+        const fs = s.getAttribute('tts:fontStyle') || s.getAttribute('fontStyle')
+        if (id && fs === 'italic') {
+          styleMap.set(id, true)
+        }
+      }
+
       const ps = xmlDoc.getElementsByTagName('p')
       capturedSubtitles.length = 0 // Clear previous
+
+      const processNode = (node: Node): string => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.nodeValue || ''
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node as Element
+          let content = ''
+          if (el.localName === 'br') return ' '
+
+          for (let i = 0; i < el.childNodes.length; i++) {
+            content += processNode(el.childNodes[i])
+          }
+
+          const styleId = el.getAttribute('style')
+          const fontStyle = el.getAttribute('tts:fontStyle') || el.getAttribute('fontStyle')
+          const isItalic = fontStyle === 'italic' || (styleId && styleMap.get(styleId))
+
+          if (isItalic) {
+            return `<i>${content}</i>`
+          }
+          return content
+        }
+        return ''
+      }
       for (let i = 0; i < ps.length; i++) {
         const p = ps[i]
         const begin = p.getAttribute('begin')
@@ -120,11 +157,13 @@ function mainWorldLogic(): void {
           pos = regionMap.get(regionId)!
         }
 
+        const htmlContent = processNode(p)
+
         if (begin && end) {
           capturedSubtitles.push({
             start: parseTime(begin),
             end: parseTime(end),
-            text: p.textContent || '',
+            text: htmlContent,
             position: pos
           })
         }
@@ -296,7 +335,7 @@ function mainWorldLogic(): void {
       const time = video.currentTime
       const line = activeSecondarySubtitles.find((l) => time >= l.start && time <= l.end)
       if (line) {
-        textView.innerText = line.text
+        textView.innerHTML = line.text // Use innerHTML for italics/br
         textView.style.opacity = '1'
 
         // Position update
