@@ -19,6 +19,22 @@ export interface PlayerRef {
 const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
   const webviewRef = useRef<WebViewElement>(null)
   const [loading, setLoading] = useState(true)
+  const [netflixPreload, setNetflixPreload] = useState<string>('')
+
+  useEffect(() => {
+    if (service.name === 'Netflix') {
+      window.api
+        .getNetflixPreloadPath()
+        .then((path) => {
+          setNetflixPreload(`file://${path}`)
+        })
+        .catch((err) => {
+          console.error('[Player] Failed to get preload path:', err)
+        })
+    } else {
+      setNetflixPreload('')
+    }
+  }, [service.name])
 
   useImperativeHandle(ref, () => ({
     goBack: () => {
@@ -30,6 +46,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
   }))
 
   useEffect(() => {
+    setLoading(true)
     const webview = webviewRef.current
     if (!webview) {
       return
@@ -74,8 +91,6 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
       }
     }
 
-    webview.addEventListener('did-start-loading', handleStartLoading)
-    webview.addEventListener('did-stop-loading', handleStopLoading)
     webview.addEventListener('did-finish-load', handleFinishLoad)
     webview.addEventListener('dom-ready', handleDomReady)
     window.addEventListener('keydown', handleKeyDown)
@@ -87,7 +102,7 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
       webview.removeEventListener('dom-ready', handleDomReady)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [service])
+  }, [service, netflixPreload])
 
   return (
     <>
@@ -98,9 +113,11 @@ const Player = forwardRef<PlayerRef, PlayerProps>(({ service }, ref) => {
         </div>
       )}
       <webview
+        key={service.name + (service.name === 'Netflix' ? netflixPreload : '')}
         ref={webviewRef}
         src={service.url}
         className={`w-full h-full ${loading ? 'hidden' : ''}`}
+        {...(service.name === 'Netflix' && netflixPreload ? { preload: netflixPreload } : {})}
       />
     </>
   )

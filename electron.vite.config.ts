@@ -7,6 +7,14 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   preload: {
+    build: {
+      lib: {
+        entry: {
+          index: 'src/preload/index.ts',
+          netflix: 'src/preload/netflix.ts'
+        }
+      }
+    },
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {

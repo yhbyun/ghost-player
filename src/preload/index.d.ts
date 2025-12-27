@@ -23,6 +23,7 @@ declare global {
       onPlaybackControl: (callback: (action: 'play' | 'stop') => void) => () => void
       onAlwaysOnTopStatusChanged: (callback: (status: boolean) => void) => () => void
       dropFiles: (filePaths: string[]) => void
+      getNetflixPreloadPath: () => Promise<string>
     }
   }
 }

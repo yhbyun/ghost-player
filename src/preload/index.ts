@@ -83,7 +83,8 @@ const api = {
   },
   dropFiles: (filePaths: string[]): void => {
     ipcRenderer.send('drop-files', filePaths)
-  }
+  },
+  getNetflixPreloadPath: (): Promise<string> => ipcRenderer.invoke('get-netflix-preload-path')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

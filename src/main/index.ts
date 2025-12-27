@@ -179,6 +179,10 @@ app.whenReady().then(async () => {
     return store.get('lastContent')
   })
 
+  ipcMain.handle('get-netflix-preload-path', () => {
+    return join(__dirname, '../preload/netflix.js')
+  })
+
   ipcMain.on('set-last-content', (_, content) => {
     store.set('lastContent', content)
   })
