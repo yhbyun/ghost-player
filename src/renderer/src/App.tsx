@@ -1,31 +1,45 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { logger } from './logger'
-import Player, { PlayerRef } from './components/Player'
+import WebPlayer, { PlayerRef } from './components/Player'
 import RadialMenu from './components/RadialMenu'
 import SettingsMenu from './components/SettingsMenu'
 import VideoPlayer from './components/VideoPlayer'
+import PlaylistSidebar from './components/PlaylistSidebar'
+import type Player from 'video.js/dist/types/player'
 import { Service, services } from '../../config/services'
-import { PlayParams } from '../../types'
-import videojs from 'video.js'
+import { Content, PlaylistItem } from '../../types'
 
-type ContentSource = { type: 'service'; data: Service } | { type: 'video'; data: PlayParams }
+type ContentSource = Content
 
 function App(): React.JSX.Element {
   const [content, setContent] = useState<ContentSource | undefined>(undefined)
   const [isHovering, setIsHovering] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isContextHovering, setIsContextHovering] = useState(false)
-  const playerRef = useRef<PlayerRef>(null)
-  const videoPlayerRef = useRef<videojs.Player | null>(null)
+  const [isPlaylistOpen, setIsPlaylistOpen] = useState(false)
+  const webPlayerRef = useRef<PlayerRef>(null)
+  const videoPlayerRef = useRef<Player | null>(null)
   const [alwaysOnTopIndicator, setAlwaysOnTopIndicator] = useState<{
     status: boolean
     key: number
   } | null>(null)
   const alwaysOnTopTimeoutRef = useRef<number | null>(null)
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>([])
+  const [currentIndex, setCurrentIndex] = useState<number>(-1)
+  const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     const fetchInitialContent = async (): Promise<void> => {
       const initialContent = await window.api.getInitialContent()
+      const initialPlaylist = (await window.api.getSetting('playlist', {
+        items: [],
+        currentIndex: -1
+      })) as { items: PlaylistItem[]; currentIndex: number }
+
+      setPlaylist(initialPlaylist.items || [])
+      setCurrentIndex(initialPlaylist.currentIndex ?? -1)
+      setIsLoaded(true)
+
       if (initialContent) {
         if (initialContent.type === 'service') {
           // Check if it's a custom URL
@@ -73,9 +87,28 @@ function App(): React.JSX.Element {
 
     const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
       console.log('cleanupOnOpenFile', playParams)
-      const newContent = { type: 'video' as const, data: playParams }
-      setContent(newContent)
-      window.api.setLastContent(newContent)
+      const fileName = playParams.videoSource.split('/').pop() || 'Untitled Video'
+      const newItem: PlaylistItem = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        title: fileName,
+        params: playParams
+      }
+
+      setPlaylist((prev) => {
+        const alreadyExists = prev.some((item) => item.params.videoSource === playParams.videoSource)
+        if (alreadyExists) return prev
+        const newPlaylist = [...prev, newItem]
+
+        // If it was empty or the only item, start playing
+        if (prev.length === 0) {
+          const newContent = { type: 'video' as const, data: playParams }
+          setContent(newContent)
+          setCurrentIndex(0)
+          window.api.setLastContent(newContent)
+        }
+
+        return newPlaylist
+      })
     })
 
     const cleanupOnPlaybackControl = window.api.onPlaybackControl((action) => {
@@ -102,6 +135,22 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  useEffect(() => {
+    if (!isLoaded) return
+
+    window.api.setSetting('playlist', { items: playlist, currentIndex: currentIndex })
+
+    if (content?.type === 'playlist') {
+      window.api.setLastContent({
+        type: 'playlist',
+        data: {
+          items: playlist,
+          currentIndex: currentIndex
+        }
+      })
+    }
+  }, [playlist, currentIndex, content, isLoaded])
+
   const dragRef = useRef({
     isDragging: false,
     startX: 0,
@@ -114,8 +163,8 @@ function App(): React.JSX.Element {
       logger.log('dragging', 'handleMouseDown', e.clientX, e.clientY)
       dragRef.current = {
         isDragging: true,
-        startX: e.clientX,
-        startY: e.clientY
+        startX: e.screenX,
+        startY: e.screenY
       }
       setIsDragging(true)
     }
@@ -123,15 +172,14 @@ function App(): React.JSX.Element {
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent): void => {
-      if (!dragRef.current.isDragging) return
-
-      const deltaX = e.clientX - dragRef.current.startX
-      const deltaY = e.clientY - dragRef.current.startY
-      logger.log('dragging', 'handleMouseMove', { deltaX, deltaY })
-
-      window.api.dragWindow(deltaX, deltaY)
+      if (dragRef.current.isDragging) {
+        const deltaX = e.screenX - dragRef.current.startX
+        const deltaY = e.screenY - dragRef.current.startY
+        window.api.dragWindow(deltaX, deltaY)
+        dragRef.current.startX = e.screenX
+        dragRef.current.startY = e.screenY
+      }
     }
-
     const handleMouseUp = (): void => {
       if (dragRef.current.isDragging) {
         logger.log('dragging', 'handleMouseUp')
@@ -149,6 +197,28 @@ function App(): React.JSX.Element {
     }
   }, [])
 
+  const handleDragOver = (e: React.DragEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsHovering(true)
+  }
+
+  const handleDrop = (e: React.DragEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsHovering(false)
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    const paths = files
+      .map((f) => (f as unknown as { path: string }).path)
+      .filter((p) => typeof p === 'string')
+
+    if (paths.length > 0) {
+      window.api.dropFiles(paths)
+    }
+  }
+
   const handleServiceChange = (serviceName: string): void => {
     const newService = services.find((s) => s.name === serviceName)
     if (newService) {
@@ -165,19 +235,45 @@ function App(): React.JSX.Element {
 
   const handleHistoryBack = (): void => {
     if (content?.type === 'service') {
-      playerRef.current?.goBack()
+      webPlayerRef.current?.goBack()
     }
   }
 
   const handleReload = (): void => {
     if (content?.type === 'service') {
-      playerRef.current?.reload()
+      webPlayerRef.current?.reload()
     }
   }
 
   const handleFileOpen = (): void => {
     window.api.openFile()
   }
+
+  const playNext = useCallback(() => {
+    if (currentIndex < playlist.length - 1) {
+      const nextIndex = currentIndex + 1
+      setCurrentIndex(nextIndex)
+      const nextItem = playlist[nextIndex]
+      setContent({ type: 'video', data: nextItem.params })
+    }
+  }, [currentIndex, playlist])
+
+  const playPrevious = useCallback(() => {
+    if (currentIndex > 0) {
+      const prevIndex = currentIndex - 1
+      setCurrentIndex(prevIndex)
+      const prevItem = playlist[prevIndex]
+      setContent({ type: 'video', data: prevItem.params })
+    }
+  }, [currentIndex, playlist])
+
+  const selectPlaylistItem = useCallback(
+    (index: number): void => {
+      setCurrentIndex(index)
+      setContent({ type: 'video', data: playlist[index].params })
+    },
+    [playlist]
+  )
 
   const handleTimeUpdate = useCallback(
     (time: number): void => {
@@ -189,9 +285,15 @@ function App(): React.JSX.Element {
             currentTime: time
           }
         })
+      } else if (content?.type === 'playlist') {
+        const updatedPlaylist = [...playlist]
+        if (currentIndex >= 0 && currentIndex < updatedPlaylist.length) {
+          updatedPlaylist[currentIndex].params.currentTime = time
+          setPlaylist(updatedPlaylist)
+        }
       }
     },
-    [content]
+    [content, playlist, currentIndex]
   )
 
   const renderedContent = useMemo(() => {
@@ -200,7 +302,7 @@ function App(): React.JSX.Element {
     }
 
     if (content.type === 'service') {
-      return <Player ref={playerRef} key={content.data.name} service={content.data} />
+      return <WebPlayer ref={webPlayerRef} key={content.data.name} service={content.data as any} />
     }
 
     if (content.type === 'video') {
@@ -219,12 +321,13 @@ function App(): React.JSX.Element {
           onTimeUpdate={handleTimeUpdate}
           onPlay={() => window.api.sendPlaybackState(true)}
           onPause={() => window.api.sendPlaybackState(false)}
+          onEnded={playNext}
         />
       )
     }
 
     return null
-  }, [content, handleTimeUpdate])
+  }, [content, handleTimeUpdate, playNext])
 
   return (
     <div
@@ -240,6 +343,8 @@ function App(): React.JSX.Element {
         window.api.notifyMouseEvent('leave')
       }}
       onMouseDown={handleMouseDown}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     >
       {isDragging && <div className="absolute inset-0 z-10" />}
       {/* Non-draggable content area */}
@@ -274,11 +379,33 @@ function App(): React.JSX.Element {
             onHistoryBack={handleHistoryBack}
             onReload={handleReload}
             onFileOpen={handleFileOpen}
+            onPlaylistToggle={() => setIsPlaylistOpen(!isPlaylistOpen)}
           />
         </div>
         <div className="absolute right-2 bottom-2">
           <SettingsMenu />
         </div>
+        <PlaylistSidebar
+          playlist={playlist}
+          currentIndex={currentIndex}
+          isOpen={isPlaylistOpen}
+          onClose={() => setIsPlaylistOpen(false)}
+          onSelectItem={selectPlaylistItem}
+          onPlayNext={playNext}
+          onPlayPrevious={playPrevious}
+          onAddFile={handleFileOpen}
+          onRemoveItem={(index: number) => {
+            const newPlaylist = [...playlist]
+            newPlaylist.splice(index, 1)
+            setPlaylist(newPlaylist)
+            if (index === currentIndex) {
+              setCurrentIndex(-1)
+              setContent(undefined)
+            } else if (index < currentIndex) {
+              setCurrentIndex(currentIndex - 1)
+            }
+          }}
+        />
       </div>
     </div>
   )

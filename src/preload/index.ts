@@ -80,6 +80,9 @@ const api = {
     return () => {
       ipcRenderer.removeListener('always-on-top-status-changed', handler)
     }
+  },
+  dropFiles: (filePaths: string[]): void => {
+    ipcRenderer.send('drop-files', filePaths)
   }
 }
 

@@ -1,8 +1,8 @@
 @use 'sass:list';
 @use 'sass:math';
 
-$n: 5;
-$r: math.div(108deg, $n);
+$n: 6;
+$r: 18deg;
 $button-width: 50px;
 $item-width: 40px;
 
@@ -19,7 +19,8 @@ $d6: ($r * 5);
 
 .radial-wrap {
   position: relative;
-  height: 191px;
+  height: 200px;
+  width: 200px;
 
   .radial {
     position: relative;
@@ -85,15 +86,6 @@ $d6: ($r * 5);
     pointer-events: none;
   }
 
-  // 6개 중 안 사용하는 나머지는 hidden
-  .radial li {
-    @for $i from $n + 1 through 6 {
-      &:nth-of-type(#{$i}) {
-        display: none;
-      }
-    }
-  }
-
   // Normal
   .radial li a {
     top: 150px;
@@ -150,10 +142,6 @@ $d6: ($r * 5);
 
     .radial.fade li:nth-of-type(#{$i}) a.clicked span {
       transform: rotate(-($r * ($i - 1)));
-    }
-
-    &:nth-of-type(#{$i}) {
-      transform: rotate($r * ($i - 1));
     }
   }
 

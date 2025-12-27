@@ -222,12 +222,21 @@ app.whenReady().then(async () => {
   ipcMain.handle('open-file-dialog', async () => {
     if (!mainWindow) return
     const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openFile'],
+      properties: ['openFile', 'multiSelections'],
       filters: [{ name: 'Videos', extensions: ['mkv', 'avi', 'mp4', 'mov', 'webm'] }]
     })
 
     if (!result.canceled && result.filePaths.length > 0) {
-      playVideo(mainWindow, result.filePaths[0])
+      for (const filePath of result.filePaths) {
+        await playVideo(mainWindow, filePath)
+      }
+    }
+  })
+
+  ipcMain.on('drop-files', async (_, filePaths: string[]) => {
+    if (!mainWindow) return
+    for (const filePath of filePaths) {
+      await playVideo(mainWindow, filePath)
     }
   })
 

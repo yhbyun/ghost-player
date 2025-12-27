@@ -1,4 +1,5 @@
 import __Store from 'electron-store'
+import { PlaylistItem } from '../types'
 
 // @ts-ignore: electron-store a CommonJS module, so a type error related to default export occurs.
 const Store = __Store.default || __Store
@@ -13,7 +14,7 @@ export interface StoreType {
   isTransparent: boolean
   opacity: number
   lastContent: {
-    type: 'service' | 'video'
+    type: 'service' | 'video' | 'playlist'
     data: {
       // Service
       name?: string
@@ -21,7 +22,14 @@ export interface StoreType {
       videoSource?: string
       subtitleSource?: string
       currentTime?: number
+      // Playlist
+      items?: PlaylistItem[]
+      currentIndex?: number
     }
+  }
+  playlist?: {
+    items: PlaylistItem[]
+    currentIndex: number
   }
   isAlwaysOnTop: boolean
   alwaysOnTopLevel:
@@ -72,14 +80,16 @@ export const store = new Store<StoreType>({
     lastContent: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['service', 'video'], default: 'service' },
+        type: { type: 'string', enum: ['service', 'video', 'playlist'], default: 'service' },
         data: {
           type: 'object',
           properties: {
             name: { type: 'string' },
             videoSource: { type: 'string' },
             subtitleSource: { type: 'string' },
-            currentTime: { type: 'number' }
+            currentTime: { type: 'number' },
+            items: { type: 'array' },
+            currentIndex: { type: 'number' }
           }
         }
       },
@@ -159,6 +169,17 @@ export const store = new Store<StoreType>({
       type: 'string',
       enum: ['remote', 'local'],
       default: 'remote'
+    },
+    playlist: {
+      type: 'object',
+      properties: {
+        items: { type: 'array', default: [] },
+        currentIndex: { type: 'number', default: -1 }
+      },
+      default: {
+        items: [],
+        currentIndex: -1
+      }
     }
   }
 })

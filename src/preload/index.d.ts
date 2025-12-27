@@ -22,6 +22,7 @@ declare global {
       sendPlaybackState: (isPlaying: boolean) => void
       onPlaybackControl: (callback: (action: 'play' | 'stop') => void) => () => void
       onAlwaysOnTopStatusChanged: (callback: (status: boolean) => void) => () => void
+      dropFiles: (filePaths: string[]) => void
     }
   }
 }

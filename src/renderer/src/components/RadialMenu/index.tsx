@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faYoutube } from '@fortawesome/free-brands-svg-icons'
-import { faArrowLeft, faRedo, faFolderOpen } from '@fortawesome/free-solid-svg-icons'
+import { faArrowLeft, faRedo, faFolderOpen, faBars } from '@fortawesome/free-solid-svg-icons'
 import IconBase from './IconBase'
 import IconNetflix from './IconNetflix'
 import './style.scss'
@@ -12,6 +12,7 @@ interface RadialMenuProps {
   onHistoryBack: () => void
   onReload: () => void
   onFileOpen: () => void
+  onPlaylistToggle: () => void
 }
 
 const RadialMenu: React.FC<RadialMenuProps> = ({
@@ -19,7 +20,8 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
   onServiceChange,
   onHistoryBack,
   onReload,
-  onFileOpen
+  onFileOpen,
+  onPlaylistToggle
 }) => {
   const [expanded, setExpanded] = useState(false)
   const [neverExpanded, setNeverExpanded] = useState(true)
@@ -70,6 +72,9 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
       case 'Netflix':
         if (service) onServiceChange(service)
         break
+      case 'playlist':
+        onPlaylistToggle()
+        break
       default:
         break
     }
@@ -91,8 +96,7 @@ const RadialMenu: React.FC<RadialMenuProps> = ({
     { service: 'file-open', icon: <FontAwesomeIcon icon={faFolderOpen} /> },
     { service: 'history-back', icon: <FontAwesomeIcon icon={faArrowLeft} /> },
     { service: 'reload', icon: <FontAwesomeIcon icon={faRedo} /> },
-    { service: 'empty1' },
-    { service: 'empty2' }
+    { service: 'playlist', icon: <FontAwesomeIcon icon={faBars} /> }
   ]
 
   const radialClasses = [

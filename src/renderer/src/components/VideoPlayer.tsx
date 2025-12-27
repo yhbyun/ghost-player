@@ -66,6 +66,7 @@ interface VideoPlayerProps {
   onTimeUpdate?: (time: number) => void
   onPlay?: () => void
   onPause?: () => void
+  onEnded?: () => void
   playerRef: React.MutableRefObject<Player | null>
 }
 
@@ -78,6 +79,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onTimeUpdate,
   onPlay,
   onPause,
+  onEnded,
   playerRef
 }) => {
   const videoRef = useRef<HTMLDivElement>(null)
@@ -192,28 +194,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       isCapturing: isCaptioningEnabled
     })
 
-    const cleanup = (): void => {
-      if (captionIntervalRef.current) {
-        clearInterval(captionIntervalRef.current)
-        captionIntervalRef.current = null
+    const runInterval = (): (() => void) => {
+      processAudioForCaptioning()
+      captionIntervalRef.current = window.setInterval(processAudioForCaptioning, 5000)
+      return () => {
+        if (captionIntervalRef.current) {
+          clearInterval(captionIntervalRef.current)
+          captionIntervalRef.current = null
+        }
       }
     }
 
     if (isCaptioningEnabled) {
-      const initialTimeout = setTimeout(() => {
-        processAudioForCaptioning()
-        captionIntervalRef.current = window.setInterval(processAudioForCaptioning, 5000)
-      }, 2000)
-
-      return () => {
-        clearTimeout(initialTimeout)
-        cleanup()
-      }
+      const timeout = setTimeout(runInterval, 2000)
+      return () => clearTimeout(timeout)
     } else {
-      cleanup()
       setCaptionText('')
       setIsProcessingAudio(false)
       audioDataBufferRef.current = []
+      return () => {}
     }
   }, [isCaptioningEnabled, processAudioForCaptioning])
 
@@ -305,7 +304,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       audioDataBufferRef.current = []
     }
 
-    const player = videojs(videoElement, options, () => {
+    // Check if a player already exists for this element
+    let player = (videojs as any).getPlayer('video-player')
+    if (player) {
+      // If player exists, dispose it first to reinitialize with new options
+      player.dispose()
+    }
+
+    player = videojs(videoElement, options, () => {
       if (currentTime) {
         player.currentTime(currentTime)
       }
@@ -313,18 +319,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       player.on('timeupdate', () => {
         const now = Date.now()
         const currentPos = player.currentTime()
-        if (onTimeUpdate && typeof currentPos === 'number' && now - lastUpdateTimeRef.current > 5000) {
+        if (
+          onTimeUpdate &&
+          typeof currentPos === 'number' &&
+          now - lastUpdateTimeRef.current > 5000
+        ) {
           onTimeUpdate(currentPos)
           lastUpdateTimeRef.current = now
         }
       })
 
-      player.on('play', () => {
+      player.on('play', (): void => {
         onPlay?.()
       })
 
-      player.on('pause', () => {
+      player.on('pause', (): void => {
         onPause?.()
+      })
+
+      player.on('ended', () => {
+        onEnded?.()
       })
 
       player.on('loadedmetadata', () => {
@@ -368,8 +382,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         e.preventDefault()
         if (player.paused()) {
           player.play()
+          showPlayPauseIndicator('play')
         } else {
           player.pause()
+          showPlayPauseIndicator('pause')
         }
       } else if (e.key === 'ArrowLeft') {
         player.currentTime(player.currentTime() - 5)
@@ -411,7 +427,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       if (playPauseTimeoutRef.current) window.clearTimeout(playPauseTimeoutRef.current)
       stopAudioCapture()
     }
-  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, playerRef, currentTime])
+  }, [src, type, duration, subtitleSrc, onTimeUpdate, onPlay, onPause, onEnded, playerRef, currentTime])
 
   const renderCaption = (): React.JSX.Element | null => {
     if (!isCaptioningEnabled && !captionText.startsWith('Invalid')) {
@@ -469,7 +485,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {seekIndicator && (
         <div
           className={`absolute top-1/2 -translate-y-1/2 ${
-            seekIndicator.type === 'backward' ? 'left-[10%] -translate-x-1/2' : 'right-[10%] translate-x-1/2'
+            seekIndicator.type === 'backward'
+              ? 'left-[10%] -translate-x-1/2'
+              : 'right-[10%] translate-x-1/2'
           }`}
         >
           <div
