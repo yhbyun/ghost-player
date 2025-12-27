@@ -222,12 +222,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const videoElement = document.createElement('video-js')
-    videoElement.classList.add('vjs-big-play-centered')
     videoRef.current.appendChild(videoElement)
 
     const options: any = {
       autoplay: true,
       controls: true,
+      bigPlayButton: false,
       responsive: true,
       fluid: true,
       sources: [{ src, type: 'video/mp4' }]
