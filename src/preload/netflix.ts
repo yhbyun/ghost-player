@@ -297,7 +297,7 @@ function mainWorldLogic(): void {
       width: '90%',
       textAlign: 'center',
       color: '#ffff00', // Bright yellow
-      fontSize: '26px',
+      fontSize: '2.0vw',
       fontWeight: 'bold',
       textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.8)', // Strong shadow for readability
       zIndex: '9999',
