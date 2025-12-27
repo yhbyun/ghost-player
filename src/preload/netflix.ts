@@ -317,6 +317,14 @@ function mainWorldLogic(): void {
       activeSecondarySubtitles.push(...capturedSubtitles)
       if (btn) btn.innerText = `Locked (${activeSecondarySubtitles.length})`
     })
+
+    // Fullscreen Handling
+    document.addEventListener('fullscreenchange', () => {
+      const fsElement = document.fullscreenElement
+      const target = fsElement || document.body
+      if (controls.parentElement !== target) target.appendChild(controls)
+      if (display.parentElement !== target) target.appendChild(display)
+    })
   }
 
   // Run UI
