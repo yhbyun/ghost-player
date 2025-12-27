@@ -129,44 +129,81 @@ function mainWorldLogic(): void {
 
   // UI Construction
   const constructUI = (): void => {
-    if (document.getElementById('dual-sub-overlay')) return
+    if (document.getElementById('dual-sub-controls')) return
 
-    const overlay = document.createElement('div')
-    overlay.id = 'dual-sub-overlay'
-    Object.assign(overlay.style, {
+    // 1. Controls Container (Top Right)
+    const controls = document.createElement('div')
+    controls.id = 'dual-sub-controls'
+    Object.assign(controls.style, {
       position: 'fixed',
-      top: '10%',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      color: 'white',
-      fontSize: '16px',
-      zIndex: '9999',
-      pointerEvents: 'auto',
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      top: '100px', // Avoid Netflix top nav
+      right: '20px',
+      zIndex: '10000',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
       padding: '8px 12px',
-      borderRadius: '6px',
+      borderRadius: '8px',
+      color: 'white',
+      fontFamily: 'sans-serif',
+      fontSize: '13px',
+      opacity: '0.1', // Almost invisible by default
+      transition: 'opacity 0.3s',
+      cursor: 'default',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
-      textAlign: 'center'
+      gap: '8px',
+      pointerEvents: 'auto'
     })
 
-    overlay.innerHTML = `
-      <div style="margin-bottom: 5px; opacity: 0.8; font-size: 12px;">
-         Step 1: Select Language 1 (e.g. English) <br/>
-         Step 2: Click 'Lock Secondary' <br/>
-         Step 3: Select Language 2 (e.g. Korean)
-      </div>
-      <div style="margin-bottom: 8px;">
-        <span id="dual-sub-count" style="margin-right: 10px;">Lines: 0</span>
-        <button id="dual-sub-lock-btn" style="cursor: pointer; padding: 2px 6px;">Lock Secondary</button>
-      </div>
-      <div id="dual-sub-text" style="font-size: 24px; color: yellow; text-shadow: 2px 2px 2px black; min-height: 1.5em; white-space: pre-wrap;"></div>
-    `
-    document.body.appendChild(overlay)
+    controls.addEventListener('mouseenter', () => {
+      controls.style.opacity = '1'
+    })
+    controls.addEventListener('mouseleave', () => {
+      controls.style.opacity = '0.1'
+    })
 
+    controls.innerHTML = `
+      <span id="dual-sub-count">0 items</span>
+      <button id="dual-sub-lock-btn" style="
+        background: #e50914;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 12px;">
+        Lock Subtitles
+      </button>
+    `
+    document.body.appendChild(controls)
+
+    // 2. Subtitle Display Container (Bottom Center)
+    const display = document.createElement('div')
+    display.id = 'dual-sub-text'
+    Object.assign(display.style, {
+      position: 'fixed',
+      bottom: '20%', // Raised to avoid overlapping native subs
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: '90%',
+      textAlign: 'center',
+      color: '#ffff00', // Bright yellow
+      fontSize: '26px',
+      fontWeight: 'bold',
+      textShadow: '0 2px 4px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.8)', // Strong shadow for readability
+      zIndex: '9999',
+      pointerEvents: 'none', // Pass clicks through to video
+      opacity: '0',
+      transition: 'opacity 0.1s',
+      whiteSpace: 'pre-wrap',
+      lineHeight: '1.3'
+    })
+    document.body.appendChild(display)
+
+    // Logic
     const btn = document.getElementById('dual-sub-lock-btn')
-    btn?.addEventListener('click', () => {
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation() // Prevent click from pausing video
       activeSecondarySubtitles.length = 0
       activeSecondarySubtitles.push(...capturedSubtitles)
       if (btn) btn.innerText = `Locked (${activeSecondarySubtitles.length})`
