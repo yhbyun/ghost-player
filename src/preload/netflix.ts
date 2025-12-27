@@ -11,6 +11,7 @@ function mainWorldLogic(): void {
     start: number
     end: number
     text: string
+    position?: 'top' | 'bottom'
   }
 
   const capturedSubtitles: SubtitleLine[] = []
@@ -72,17 +73,59 @@ function mainWorldLogic(): void {
     try {
       const parser = new DOMParser()
       const xmlDoc = parser.parseFromString(text, 'text/xml')
+
+      // Parse Regions
+      const regionMap = new Map<string, 'top' | 'bottom'>()
+      const regions = xmlDoc.getElementsByTagName('region') // or ns? usually standard tag name
+      for (let i = 0; i < regions.length; i++) {
+        const r = regions[i]
+        const id = r.getAttribute('xml:id') || r.id
+        const origin = r.getAttribute('tts:origin')
+        const displayAlign = r.getAttribute('tts:displayAlign')
+
+        let pos: 'top' | 'bottom' = 'bottom'
+
+        // Heuristic: displayAlign takes precedence
+        if (displayAlign === 'before') {
+          pos = 'top'
+        } else if (displayAlign === 'after') {
+          pos = 'bottom'
+        } else if (origin) {
+          // Fallback to origin
+          const parts = origin.split(' ')
+          if (parts.length === 2) {
+            const yStr = parts[1]
+            if (yStr.endsWith('%')) {
+              const yVal = parseFloat(yStr)
+              if (yVal < 40) pos = 'top'
+              else pos = 'bottom'
+            }
+          }
+        }
+
+        regionMap.set(id, pos)
+        // console.log(`[Netflix Dual Subtitles] Region ${id}: origin=${origin}, align=${displayAlign} => ${pos}`)
+      }
+
       const ps = xmlDoc.getElementsByTagName('p')
       capturedSubtitles.length = 0 // Clear previous
       for (let i = 0; i < ps.length; i++) {
         const p = ps[i]
         const begin = p.getAttribute('begin')
         const end = p.getAttribute('end')
+        const regionId = p.getAttribute('region')
+        let pos: 'top' | 'bottom' = 'bottom'
+
+        if (regionId && regionMap.has(regionId)) {
+          pos = regionMap.get(regionId)!
+        }
+
         if (begin && end) {
           capturedSubtitles.push({
             start: parseTime(begin),
             end: parseTime(end),
-            text: p.textContent || ''
+            text: p.textContent || '',
+            position: pos
           })
         }
       }
@@ -209,7 +252,7 @@ function mainWorldLogic(): void {
     display.id = 'dual-sub-text'
     Object.assign(display.style, {
       position: 'fixed',
-      bottom: '20%', // Raised to avoid overlapping native subs
+      top: '87%', // Raised to avoid overlapping native subs (even 2 lines)
       left: '50%',
       transform: 'translateX(-50%)',
       width: '90%',
@@ -255,6 +298,15 @@ function mainWorldLogic(): void {
       if (line) {
         textView.innerText = line.text
         textView.style.opacity = '1'
+
+        // Position update
+        if (line.position === 'top') {
+          textView.style.top = '10%'
+          textView.style.bottom = 'auto'
+        } else {
+          textView.style.top = '87%'
+          textView.style.bottom = 'auto'
+        }
       } else {
         textView.innerText = ''
         textView.style.opacity = '0'
