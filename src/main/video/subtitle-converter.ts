@@ -1,89 +1,169 @@
 import { promises as fs } from 'fs'
 import path from 'path'
 import iconv from 'iconv-lite'
+import { SubtitleConversionError, FileNotFoundError, FileAccessError } from './errors'
+import { logger } from '../logger'
 
 /**
  * Converts SMI or SRT subtitle files to WebVTT format.
+ * @throws {FileNotFoundError} If the subtitle file does not exist
+ * @throws {FileAccessError} If the subtitle file cannot be read
+ * @throws {SubtitleConversionError} If conversion fails
  */
 export async function convertToVtt(filePath: string): Promise<string> {
-  const ext = path.extname(filePath).toLowerCase()
-  const buffer = await fs.readFile(filePath)
+  try {
+    // Validate file path
+    if (!filePath || typeof filePath !== 'string') {
+      throw new SubtitleConversionError(filePath, new Error('Invalid file path'))
+    }
 
-  if (ext === '.srt') {
-    return convertSrtToVtt(buffer)
-  } else if (ext === '.smi') {
-    return convertSmiToVtt(buffer)
-  } else if (ext === '.vtt') {
-    return buffer.toString('utf-8')
+    const ext = path.extname(filePath).toLowerCase()
+    logger.log('subtitle', `Converting subtitle file: ${filePath} (${ext})`)
+
+    // Check if file exists and is accessible
+    let buffer: Buffer
+    try {
+      buffer = await fs.readFile(filePath)
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error) {
+        const fsError = error as NodeJS.ErrnoException
+        if (fsError.code === 'ENOENT') {
+          throw new FileNotFoundError(filePath, error)
+        } else if (fsError.code === 'EACCES' || fsError.code === 'EPERM') {
+          throw new FileAccessError(filePath, error)
+        }
+      }
+      throw new SubtitleConversionError(filePath, error)
+    }
+
+    logger.log('subtitle', `File read successfully, size: ${buffer.length} bytes`)
+
+    let result: string
+    if (ext === '.srt') {
+      result = convertSrtToVtt(buffer)
+    } else if (ext === '.smi') {
+      result = convertSmiToVtt(buffer)
+    } else if (ext === '.vtt') {
+      result = buffer.toString('utf-8')
+    } else {
+      throw new SubtitleConversionError(filePath, new Error(`Unsupported subtitle format: ${ext}`))
+    }
+
+    logger.log('subtitle', `Conversion successful, output size: ${result.length} chars`)
+    return result
+  } catch (error) {
+    // Re-throw custom errors as-is
+    if (
+      error instanceof FileNotFoundError ||
+      error instanceof FileAccessError ||
+      error instanceof SubtitleConversionError
+    ) {
+      throw error
+    }
+
+    // Wrap unexpected errors
+    logger.error('subtitle', 'Unexpected error during conversion:', error)
+    throw new SubtitleConversionError(filePath, error)
   }
-
-  throw new Error(`Unsupported subtitle format: ${ext}`)
 }
 
 function convertSrtToVtt(buffer: Buffer): string {
-  let content = decodeBuffer(buffer)
+  try {
+    let content = decodeBuffer(buffer)
 
-  // Basic SRT to VTT:
-  // 1. Add WEBWTT header
-  // 2. Change , to . in timestamps
-  content = content.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      throw new Error('Empty subtitle file')
+    }
 
-  return `WEBVTT\n\n${content}`
+    // Basic SRT to VTT:
+    // 1. Add WEBWTT header
+    // 2. Change , to . in timestamps
+    content = content.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')
+
+    const result = `WEBVTT\n\n${content}`
+    logger.log('subtitle', `SRT to VTT conversion complete`)
+    return result
+  } catch (error) {
+    logger.error('subtitle', 'Failed to convert SRT to VTT:', error)
+    throw error
+  }
 }
 
 function convertSmiToVtt(buffer: Buffer): string {
-  const content = decodeBuffer(buffer)
+  try {
+    const content = decodeBuffer(buffer)
 
-  // Split by <SYNC to avoid complex regex capture issues
-  const parts = content.split(/<sync/gi)
-  const rawCues: { start: number; text: string }[] = []
+    // Validate content
+    if (!content || content.trim().length === 0) {
+      throw new Error('Empty subtitle file')
+    }
 
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i]
-    const match = part.match(/start\s*=\s*(?:"|')?(\d+)(?:"|')?/i)
-    if (!match) continue
+    // Split by <SYNC to avoid complex regex capture issues
+    const parts = content.split(/<sync/gi)
+    const rawCues: { start: number; text: string }[] = []
 
-    const startMs = parseInt(match[1], 10)
-    const tagEndIndex = part.indexOf('>')
-    if (tagEndIndex === -1) continue
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i]
+      const match = part.match(/start\s*=\s*(?:"|')?(\d+)(?:"|')?/i)
+      if (!match) continue
 
-    const rawText = part.substring(tagEndIndex + 1).replace(/<\/body>|<\/sami>.*/gi, '')
+      const startMs = parseInt(match[1], 10)
+      if (isNaN(startMs)) {
+        logger.warn('subtitle', `Invalid timestamp in SMI file: ${match[1]}`)
+        continue
+      }
 
-    // Process text
-    const text = rawText
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/gi, ' ')
-      .replace(/&lt;/gi, '<')
-      .replace(/&gt;/gi, '>')
-      .replace(/&quot;/gi, '"')
-      .replace(/&amp;/gi, '&')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/[a-zA-Z0-9]+=[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+      const tagEndIndex = part.indexOf('>')
+      if (tagEndIndex === -1) continue
 
-    rawCues.push({ start: startMs, text })
+      const rawText = part.substring(tagEndIndex + 1).replace(/<\/body>|<\/sami>.*/gi, '')
+
+      // Process text
+      const text = rawText
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&amp;/gi, '&')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/[a-zA-Z0-9]+=[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      if (text) {
+        rawCues.push({ start: startMs, text })
+      }
+    }
+
+    if (rawCues.length === 0) {
+      logger.warn('subtitle', 'No valid cues found in SMI file')
+      return 'WEBVTT\n\n'
+    }
+
+    rawCues.sort((a, b) => a.start - b.start)
+
+    let vtt = 'WEBVTT\n\n'
+    for (let i = 0; i < rawCues.length; i++) {
+      const cue = rawCues[i]
+      if (!cue.text) continue
+
+      const start = formatVttTime(cue.start)
+      const nextStart = i + 1 < rawCues.length ? rawCues[i + 1].start : cue.start + 5000
+      const endMs = Math.max(cue.start + 50, nextStart)
+      const end = formatVttTime(endMs)
+
+      vtt += `${start} --> ${end}\n${cue.text}\n\n`
+    }
+
+    logger.log('subtitle', `SMI to VTT conversion complete, ${rawCues.length} cues extracted`)
+    return vtt
+  } catch (error) {
+    logger.error('subtitle', 'Failed to convert SMI to VTT:', error)
+    throw error
   }
-
-  if (rawCues.length === 0) return 'WEBVTT\n\n'
-
-  rawCues.sort((a, b) => a.start - b.start)
-
-  let vtt = 'WEBVTT\n\n'
-  for (let i = 0; i < rawCues.length; i++) {
-    const cue = rawCues[i]
-    if (!cue.text) continue
-
-    const start = formatVttTime(cue.start)
-    const nextStart = i + 1 < rawCues.length ? rawCues[i + 1].start : cue.start + 5000
-    const endMs = Math.max(cue.start + 50, nextStart)
-    const end = formatVttTime(endMs)
-
-    vtt += `${start} --> ${end}\n${cue.text}\n\n`
-  }
-
-  return vtt
 }
 
 /**

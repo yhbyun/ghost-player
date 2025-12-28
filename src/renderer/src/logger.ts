@@ -9,6 +9,12 @@ class Logger {
     }
   }
 
+  public warn(category: string, ...args: unknown[]): void {
+    if (activeCategories.includes(category)) {
+      console.warn(`[${category}]`, ...args)
+    }
+  }
+
   public error(category: string, ...args: unknown[]): void {
     if (activeCategories.includes(category)) {
       console.error(`[${category}]`, ...args)

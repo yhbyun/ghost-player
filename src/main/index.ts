@@ -224,23 +224,86 @@ app.whenReady().then(async () => {
   })
 
   ipcMain.handle('open-file-dialog', async () => {
-    if (!mainWindow) return
-    const result = await dialog.showOpenDialog(mainWindow, {
-      properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Videos', extensions: ['mkv', 'avi', 'mp4', 'mov', 'webm'] }]
-    })
+    if (!mainWindow) {
+      logger.error('ipc', 'mainWindow is not available')
+      return
+    }
 
-    if (!result.canceled && result.filePaths.length > 0) {
-      for (const filePath of result.filePaths) {
-        await playVideo(mainWindow, filePath)
+    try {
+      const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile', 'multiSelections'],
+        filters: [{ name: 'Videos', extensions: ['mkv', 'avi', 'mp4', 'mov', 'webm'] }]
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        logger.log('ipc', 'File dialog cancelled or no files selected')
+        return
       }
+
+      logger.log('ipc', `Selected ${result.filePaths.length} file(s)`)
+
+      for (const filePath of result.filePaths) {
+        try {
+          await playVideo(mainWindow, filePath)
+        } catch (error) {
+          logger.error('ipc', `Failed to play video: ${filePath}`, error)
+          // Continue with next file even if one fails
+        }
+      }
+    } catch (error) {
+      logger.error('ipc', 'Error in open-file-dialog handler:', error)
+      // Dialog error - show error to user
+      dialog.showErrorBox('Error', 'Failed to open file dialog. Please try again.')
     }
   })
 
   ipcMain.on('drop-files', async (_, filePaths: string[]) => {
-    if (!mainWindow) return
+    if (!mainWindow) {
+      logger.error('ipc', 'mainWindow is not available for drop-files')
+      return
+    }
+
+    if (!Array.isArray(filePaths) || filePaths.length === 0) {
+      logger.warn('ipc', 'Invalid or empty filePaths in drop-files')
+      return
+    }
+
+    logger.log('ipc', `Processing ${filePaths.length} dropped file(s)`)
+
+    let successCount = 0
+    let failCount = 0
+
     for (const filePath of filePaths) {
-      await playVideo(mainWindow, filePath)
+      try {
+        if (typeof filePath !== 'string' || !filePath) {
+          logger.warn('ipc', 'Invalid file path in drop-files:', filePath)
+          failCount++
+          continue
+        }
+
+        await playVideo(mainWindow, filePath)
+        successCount++
+      } catch (error) {
+        logger.error('ipc', `Failed to play dropped file: ${filePath}`, error)
+        failCount++
+      }
+    }
+
+    logger.log('ipc', `Drop-files complete: ${successCount} succeeded, ${failCount} failed`)
+
+    // Show summary if there were failures
+    if (failCount > 0 && successCount === 0) {
+      dialog.showErrorBox(
+        'Playback Error',
+        `Failed to play ${failCount} file(s). Please check that the files are valid video files.`
+      )
+    } else if (failCount > 0) {
+      dialog.showMessageBox({
+        type: 'warning',
+        title: 'Partial Success',
+        message: `Successfully played ${successCount} file(s), but ${failCount} file(s) failed.`,
+        buttons: ['OK']
+      })
     }
   })
 

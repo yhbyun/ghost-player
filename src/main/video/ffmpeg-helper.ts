@@ -1,5 +1,7 @@
 import { getFfmpegPath } from './ffmpeg-path'
 import { exec, ExecException } from 'child_process'
+import { FFmpegError, FileNotFoundError } from './errors'
+import { logger } from '../logger'
 
 /**
  * Represents the result of a video format support check.
@@ -7,6 +9,8 @@ import { exec, ExecException } from 'child_process'
 export interface VideoSupportResult {
   videoCodecSupport: boolean
   audioCodecSupport: boolean
+  audioCodec?: string
+  videoCodec?: string
   duration: number
 }
 
@@ -45,26 +49,57 @@ function transformDuration(duration: string | undefined): number {
  * It uses ffmpeg to get codec and duration information.
  * @param videoPath The absolute path to the video file.
  * @returns A promise that resolves with a VideoSupportResult object.
+ * @throws {FileNotFoundError} If the video file cannot be found
+ * @throws {FFmpegError} If ffmpeg fails to process the file
  */
 export const videoSupport = (videoPath: string): Promise<VideoSupportResult> => {
   return new Promise<VideoSupportResult>((resolve, reject) => {
+    // Validate input
+    if (!videoPath || typeof videoPath !== 'string') {
+      reject(new FFmpegError('Invalid video path provided'))
+      return
+    }
+
+    const ffmpegPath = getFfmpegPath()
+    if (!ffmpegPath) {
+      reject(new FFmpegError('FFmpeg executable not found'))
+      return
+    }
+
     // Use quotes to handle paths with spaces
-    const command = `"${getFfmpegPath()}" -i "${videoPath}"`
+    const command = `"${ffmpegPath}" -i "${videoPath}"`
+
+    logger.log('video', `Running ffmpeg command: ${command}`)
 
     // ffmpeg prints information to stderr and exits with a non-zero code when using -i without an output file.
     // Therefore, we parse stderr for information.
     exec(
       command,
-      { encoding: 'utf-8' },
+      { encoding: 'utf-8', timeout: 30000 }, // 30 second timeout
       (error: ExecException | null, stdout: string, stderr: string) => {
         const output = stderr || stdout // Information is in stderr
+
+        logger.log('video', `FFmpeg output received (${output.length} chars)`)
+
+        // Check for file not found error
+        if (output.includes('No such file or directory') || output.includes('does not exist')) {
+          reject(new FileNotFoundError(videoPath))
+          return
+        }
+
+        // Check for permission errors
+        if (output.includes('Permission denied') || output.includes('Access is denied')) {
+          reject(new FFmpegError('Permission denied when accessing file'))
+          return
+        }
 
         const durationReg = /Duration: ([\d:.]+),/
         const durationStr = findVideoInfo(durationReg, output)
 
-        // If we can't find duration, it's likely a real error (e.g., file not found).
+        // If we can't find duration, it's likely a real error (e.g., corrupted file).
         if (!durationStr) {
-          reject(new Error(`Failed to get video info from ffmpeg. Output: ${output}`))
+          logger.error('video', 'Failed to extract duration from ffmpeg output', output)
+          reject(new FFmpegError(`Failed to get video duration. The file may be corrupted.`))
           return
         }
 
@@ -76,21 +111,32 @@ export const videoSupport = (videoPath: string): Promise<VideoSupportResult> => 
 
         const durationSeconds = transformDuration(durationStr)
 
-        console.log(
-          `videoCodec: ${videoCodec}, audioCodec: ${audioCodec}, duration: ${durationSeconds}`
+        logger.log(
+          'video',
+          `Parsed info - videoCodec: ${videoCodec}, audioCodec: ${audioCodec}, duration: ${durationSeconds}s`
         )
 
-        if (!videoCodec || !audioCodec || !durationSeconds) {
-          reject(new Error(`Could not parse full codec/duration info for: ${videoPath}`))
+        if (!videoCodec) {
+          logger.error('video', 'No video stream found in file')
+          reject(new FFmpegError('No video stream found. This may not be a valid video file.'))
+          return
+        }
+
+        if (!durationSeconds || durationSeconds <= 0) {
+          logger.error('video', 'Invalid duration detected')
+          reject(new FFmpegError('Invalid or zero duration detected'))
           return
         }
 
         const checkResult: VideoSupportResult = {
           videoCodecSupport: ['h264', 'vp8', 'theora'].includes(videoCodec),
-          audioCodecSupport: ['aac', 'vorbis', 'opus'].includes(audioCodec),
+          audioCodecSupport: audioCodec ? ['aac', 'vorbis', 'opus'].includes(audioCodec) : false,
+          videoCodec,
+          audioCodec,
           duration: durationSeconds
         }
 
+        logger.log('video', `Video support check result:`, checkResult)
         resolve(checkResult)
       }
     )

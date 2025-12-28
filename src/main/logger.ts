@@ -33,6 +33,14 @@ class Logger {
     }
   }
 
+  public warn(category: string, ...args: unknown[]): void {
+    if (activeCategories.includes(category)) {
+      const message = `[${category}]`
+      console.warn(message, ...args)
+      this.logToFile('warn', category, ...args)
+    }
+  }
+
   public error(category: string, ...args: unknown[]): void {
     if (activeCategories.includes(category)) {
       const message = `[${category}]`
