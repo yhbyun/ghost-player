@@ -14,8 +14,13 @@ import { localTranscriber } from './local-transcriber'
 import { ElectronBlocker } from '@ghostery/adblocker-electron'
 import { EventEmitter } from 'events'
 import { createTray } from './tray'
+import { errorHandler } from './error-handler'
 
 EventEmitter.defaultMaxListeners = 30
+
+// Initialize global error handler
+errorHandler.initialize()
+errorHandler.cleanOldCrashReports()
 
 let mainWindow: BrowserWindow | null
 
