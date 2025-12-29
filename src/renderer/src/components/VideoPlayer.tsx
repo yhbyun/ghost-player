@@ -4,6 +4,8 @@ import 'video.js/dist/video-js.css'
 import Player from 'video.js/dist/types/player'
 import './StreamPlayTech'
 import AudioVisualizer from './AudioVisualizer'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faClosedCaptioning } from '@fortawesome/free-solid-svg-icons'
 
 // --- WAV Encoding Utility ---
 const bufferToWav = (buffer: Float32Array[], sampleRate: number): Blob => {
@@ -542,15 +544,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {renderCaption()}
       <button
         onClick={handleToggleCaptioning}
-        className={`absolute bottom-2 right-20 font-bold py-2 px-4 rounded
+        className={`cc-button absolute bottom-1 right-12 p-3 rounded-full transition-all duration-200
           ${
             isCaptioningEnabled
-              ? 'bg-blue-700 text-white'
-              : 'bg-gray-500 hover:bg-gray-600 text-white'
+              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg opacity-50 hover:opacity-100'
+              : 'bg-black/50 hover:bg-black/70 text-white opacity-50 hover:opacity-100'
           }`}
         title="Toggle Live Captions"
       >
-        CC
+        <FontAwesomeIcon icon={faClosedCaptioning} className="w-5 h-5" />
       </button>
       <AudioVisualizer
         analyserNode={analyserNodeRef.current}

@@ -12,6 +12,16 @@ video:focus {
   box-shadow: none !important;
 }
 
+.cc-button {
+  display: none;
+}
+
+.hovering .cc-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @keyframes zoom-in-out {
   0% {
     transform: scale(0.5);
