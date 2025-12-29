@@ -98,16 +98,26 @@ function App(): React.JSX.Element {
         const alreadyExists = prev.some(
           (item) => item.params.videoSource === playParams.videoSource
         )
-        if (alreadyExists) return prev
-        const newPlaylist = [...prev, newItem]
-
-        // If it was empty or the only item, start playing
-        if (prev.length === 0) {
+        if (alreadyExists) {
+          // If already in playlist, play it immediately
+          const existingIndex = prev.findIndex(
+            (item) => item.params.videoSource === playParams.videoSource
+          )
           const newContent = { type: 'video' as const, data: playParams }
           setContent(newContent)
-          setCurrentIndex(0)
+          setCurrentIndex(existingIndex)
           window.api.setLastContent(newContent)
+          return prev
         }
+
+        const newPlaylist = [...prev, newItem]
+        const newIndex = newPlaylist.length - 1
+
+        // Always play the newly added video immediately
+        const newContent = { type: 'video' as const, data: playParams }
+        setContent(newContent)
+        setCurrentIndex(newIndex)
+        window.api.setLastContent(newContent)
 
         return newPlaylist
       })
@@ -304,7 +314,9 @@ function App(): React.JSX.Element {
     }
 
     if (content.type === 'service') {
-      return <WebPlayer ref={webPlayerRef} key={content.data.name} service={content.data as any} />
+      return (
+        <WebPlayer ref={webPlayerRef} key={content.data.name} service={content.data as Service} />
+      )
     }
 
     if (content.type === 'video') {
