@@ -6,15 +6,32 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(10px);
-  transition: right 0.3s ease-in-out;
+  transition:
+    right 0.3s ease-in-out,
+    visibility 0s linear 0.3s; // Delay hiding until slide animation completes
   z-index: 2000;
   display: flex;
   flex-direction: column;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
 
+  // Prevent tab navigation and scroll when closed
+  visibility: hidden;
+
+  button, li {
+    pointer-events: none;
+  }
+
   &.open {
     right: 0;
+    visibility: visible;
+    transition:
+      right 0.3s ease-in-out,
+      visibility 0s linear 0s; // Show immediately when opening
+
+    button, li {
+      pointer-events: auto;
+    }
   }
 
   .sidebar-header {
