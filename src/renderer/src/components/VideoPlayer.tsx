@@ -226,7 +226,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const videoElement = document.createElement('video-js')
     videoRef.current.appendChild(videoElement)
 
-    const options: any = {
+    const options: videojs.PlayerOptions = {
       autoplay: true,
       controls: true,
       bigPlayButton: false,
@@ -255,7 +255,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     const startAudioCapture = async (videoHtmlElement: HTMLVideoElement): Promise<void> => {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
       if (!AudioContextClass) {
         console.error('Web Audio API is not supported in this browser')
         return
@@ -306,13 +308,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
 
     // Check if a player already exists for this element
-    let player = (videojs as any).getPlayer('video-player')
-    if (player) {
+    const existingPlayer = (
+      videojs as typeof videojs & { getPlayer: (id: string) => Player | undefined }
+    ).getPlayer('video-player')
+    if (existingPlayer) {
       // If player exists, dispose it first to reinitialize with new options
-      player.dispose()
+      existingPlayer.dispose()
     }
 
-    player = videojs(videoElement, options, () => {
+    const player = videojs(videoElement, options, () => {
       if (currentTime) {
         player.currentTime(currentTime)
       }
@@ -345,8 +349,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       player.on('loadedmetadata', () => {
         const tracks = player.remoteTextTracks()
         if (tracks) {
-          for (let i = 0; i < (tracks as any).length; i++) {
-            const track = (tracks as any)[i]
+          for (let i = 0; i < tracks.length; i++) {
+            const track = tracks[i]
             if (track.kind === 'subtitles') {
               track.mode = 'showing'
             }
