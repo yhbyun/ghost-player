@@ -386,7 +386,7 @@ function App(): React.JSX.Element {
             </div>
           </div>
         )}
-        <div className="absolute left-2 bottom-2">
+        <div className="absolute left-2 bottom-2 pointer-events-none">
           <RadialMenu
             reset={false}
             onServiceChange={handleServiceChange}

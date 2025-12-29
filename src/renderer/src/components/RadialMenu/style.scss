@@ -21,6 +21,7 @@ $d6: ($r * 5);
   position: relative;
   height: 200px;
   width: 200px;
+  pointer-events: none;
 
   .radial {
     position: relative;
@@ -87,15 +88,21 @@ $d6: ($r * 5);
   }
 
   // Normal
-  .radial li a {
-    top: 150px;
-    opacity: 0;
-    animation: contract 0.35s ease-out 1 backwards;
+  .radial li {
+    pointer-events: none;
+
+    a {
+      top: 150px;
+      opacity: 0;
+      animation: contract 0.35s ease-out 1 backwards;
+    }
   }
 
   // Active
   // radial 버튼 클릭시 메뉴 아이템의 위치
   .radial.expand li {
+    pointer-events: auto;
+
     @for $i from 1 through $n {
       &:nth-of-type(#{$i}) a {
         top: 10px;
@@ -106,9 +113,13 @@ $d6: ($r * 5);
   }
 
   // Clicked
-  .radial.fade li a.clicked {
-    top: 10px;
-    animation: clicked 0.5s ease-out 1 forwards;
+  .radial.fade li {
+    pointer-events: none;
+
+    a.clicked {
+      top: 10px;
+      animation: clicked 0.5s ease-out 1 forwards;
+    }
   }
 
   .radial.fade li a:not(.clicked) {
@@ -161,6 +172,7 @@ $d6: ($r * 5);
     cursor: pointer;
     justify-content: center;
     align-items: center;
+    pointer-events: auto;
 
     &:hover {
       opacity: 1;
