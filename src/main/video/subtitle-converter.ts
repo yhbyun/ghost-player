@@ -133,9 +133,7 @@ function convertSmiToVtt(buffer: Buffer): string {
         .replace(/\s+/g, ' ')
         .trim()
 
-      if (text) {
-        rawCues.push({ start: startMs, text })
-      }
+      rawCues.push({ start: startMs, text })
     }
 
     if (rawCues.length === 0) {
