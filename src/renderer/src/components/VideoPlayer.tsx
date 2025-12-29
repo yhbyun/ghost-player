@@ -387,15 +387,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           showPlayPauseIndicator('pause')
         }
       } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
         player.currentTime(player.currentTime() - 5)
         showSeekIndicator('backward')
       } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
         player.currentTime(player.currentTime() + 5)
         showSeekIndicator('forward')
       } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
         player.volume(Math.min(1, player.volume() + 0.1))
         handleVolumeChange()
       } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
         player.volume(Math.max(0, player.volume() - 0.1))
         handleVolumeChange()
       }
