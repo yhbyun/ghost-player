@@ -87,7 +87,13 @@ function App(): React.JSX.Element {
 
     const cleanupOnOpenFile = window.api.onOpenFile((playParams) => {
       console.log('cleanupOnOpenFile', playParams)
-      const fileName = playParams.videoSource.split('/').pop() || 'Untitled Video'
+      const rawFileName = playParams.videoSource.split('/').pop() || 'Untitled Video'
+      let fileName: string
+      try {
+        fileName = decodeURIComponent(rawFileName)
+      } catch {
+        fileName = rawFileName
+      }
       const newItem: PlaylistItem = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         title: fileName,

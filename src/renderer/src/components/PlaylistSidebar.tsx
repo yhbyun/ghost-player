@@ -34,6 +34,16 @@ const PlaylistSidebar: React.FC<PlaylistSidebarProps> = ({
   onAddFile,
   isOpen
 }) => {
+  // Decode URI-encoded titles for proper display
+  const getDisplayTitle = (title: string): string => {
+    try {
+      return decodeURIComponent(title)
+    } catch {
+      // If decoding fails, return the original title
+      return title
+    }
+  }
+
   return (
     <div className={`playlist-sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
@@ -71,7 +81,7 @@ const PlaylistSidebar: React.FC<PlaylistSidebarProps> = ({
             onClick={() => onSelectItem(index)}
           >
             <div className="item-info">
-              <span className="item-title">{item.title}</span>
+              <span className="item-title">{getDisplayTitle(item.title)}</span>
             </div>
             <div className="item-actions">
               {index === currentIndex && <FontAwesomeIcon icon={faPlay} className="playing-icon" />}
