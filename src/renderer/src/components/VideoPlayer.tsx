@@ -70,6 +70,7 @@ interface VideoPlayerProps {
   onPause?: () => void
   onEnded?: () => void
   playerRef: React.MutableRefObject<Player | null>
+  filename?: string
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -82,7 +83,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onPlay,
   onPause,
   onEnded,
-  playerRef
+  playerRef,
+  filename
 }) => {
   const videoRef = useRef<HTMLDivElement>(null)
   const [seekIndicator, setSeekIndicator] = useState<{
@@ -133,6 +135,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [captionText, setCaptionText] = useState('')
   const [isProcessingAudio, setIsProcessingAudio] = useState(false)
   const captionIntervalRef = useRef<number | null>(null)
+
+  // Filename display state
+  const [showFilename, setShowFilename] = useState(false)
+  const [isHoveringVideo, setIsHoveringVideo] = useState(false)
+  const filenameTimeoutRef = useRef<number | null>(null)
 
   const processAudioForCaptioning = useCallback(async (): Promise<void> => {
     if (audioDataBufferRef.current.length === 0) {
@@ -217,6 +224,46 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return () => {}
     }
   }, [isCaptioningEnabled, processAudioForCaptioning])
+
+  // Filename display effect
+  useEffect(() => {
+    if (!filename) return
+
+    // Show filename for 3 seconds on mount
+    setShowFilename(true)
+    const initialTimeout = window.setTimeout(() => {
+      if (!isHoveringVideo) {
+        setShowFilename(false)
+      }
+    }, 3000)
+
+    return () => {
+      window.clearTimeout(initialTimeout)
+      if (filenameTimeoutRef.current) {
+        window.clearTimeout(filenameTimeoutRef.current)
+      }
+    }
+  }, [filename, isHoveringVideo])
+
+  // Handle hover state for filename display
+  useEffect(() => {
+    if (!filename) return
+
+    if (isHoveringVideo) {
+      // Clear any existing timeout
+      if (filenameTimeoutRef.current) {
+        window.clearTimeout(filenameTimeoutRef.current)
+        filenameTimeoutRef.current = null
+      }
+      // Show filename immediately on hover
+      setShowFilename(true)
+    } else {
+      // Hide filename 3 seconds after mouse leaves
+      filenameTimeoutRef.current = window.setTimeout(() => {
+        setShowFilename(false)
+      }, 3000)
+    }
+  }, [isHoveringVideo, filename])
 
   useEffect(() => {
     if (!videoRef.current) {
@@ -471,7 +518,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }
 
   return (
-    <div data-vjs-player className="relative flex items-center w-full h-full">
+    <div
+      data-vjs-player
+      className="relative flex items-center w-full h-full"
+      onMouseEnter={() => setIsHoveringVideo(true)}
+      onMouseLeave={() => setIsHoveringVideo(false)}
+    >
       <div ref={videoRef} className="w-full relative">
         {playPauseIndicator && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -502,6 +554,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
         )}
       </div>
+      {filename && showFilename && (
+        <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-md transition-opacity duration-300">
+          {filename}
+        </div>
+      )}
       {seekIndicator && (
         <div
           className={`absolute top-1/2 -translate-y-1/2 ${

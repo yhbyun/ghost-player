@@ -330,6 +330,16 @@ function App(): React.JSX.Element {
       const mimeType = content.data.videoSource.endsWith('.m3u8')
         ? 'application/x-mpegURL'
         : 'video/mp4'
+
+      // Extract filename from videoSource
+      const rawFileName = videoSource.split('/').pop() || ''
+      let filename: string | undefined
+      try {
+        filename = decodeURIComponent(rawFileName)
+      } catch {
+        filename = rawFileName
+      }
+
       return (
         <VideoPlayer
           playerRef={videoPlayerRef}
@@ -342,6 +352,7 @@ function App(): React.JSX.Element {
           onPlay={() => window.api.sendPlaybackState(true)}
           onPause={() => window.api.sendPlaybackState(false)}
           onEnded={playNext}
+          filename={filename}
         />
       )
     }
