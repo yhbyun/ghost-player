@@ -90,7 +90,7 @@
     }
 
     .playlist-item {
-      padding: 15px 20px;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -106,7 +106,7 @@
         background: rgba(74, 144, 226, 0.2);
         .item-title {
           color: #4a90e2;
-          font-weight: 600;
+          font-weight: 600 !important;
         }
       }
 
@@ -114,7 +114,8 @@
         flex: 1;
         overflow: hidden;
         .item-title {
-          font-size: 0.9rem;
+          font-size: 0.8rem;
+          font-weight: 200;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
