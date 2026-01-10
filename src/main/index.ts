@@ -6,7 +6,7 @@ import { logger } from './logger'
 import { store } from './store'
 import { setupMenu } from './menu'
 import { SideDock } from './SideDock'
-import { ShortcutManager } from './shortcuts'
+import { ShortcutManager, ShortcutAction } from './shortcuts'
 import { registerLocalFileProtocols, playVideo } from './video/video-playback'
 import fetch from 'node-fetch'
 import FormData from 'form-data'
@@ -228,6 +228,14 @@ app.whenReady().then(async () => {
     store.set(key, value)
   })
 
+  ipcMain.on('suspend-shortcuts', () => {
+    shortcutManager?.suspendShortcuts()
+  })
+
+  ipcMain.on('resume-shortcuts', () => {
+    shortcutManager?.resumeShortcuts()
+  })
+
   ipcMain.handle('open-file-dialog', async () => {
     if (!mainWindow) {
       logger.error('ipc', 'mainWindow is not available')
@@ -428,6 +436,12 @@ app.whenReady().then(async () => {
         if (menuItem) menuItem.checked = value as boolean
         break
       }
+      case 'shortcuts': {
+        if (shortcutManager) {
+          shortcutManager.registerAll(value as Record<ShortcutAction, string>)
+        }
+        break
+      }
       case 'openDevToolsOnStart': {
         const menuItem = menu.getMenuItemById('open-devtools-on-start')
         if (menuItem) menuItem.checked = value as boolean
@@ -461,13 +475,9 @@ app.whenReady().then(async () => {
       mainWindow!,
       sideDock!,
       () => store.set('isSideDockEnabled', true),
-      () => store.set('isAlwaysOnTop', !store.get('isAlwaysOnTop')),
-      store.get('shortcuts.toggleSideDock'),
-      store.get('shortcuts.disableSideDock'),
-      store.get('shortcuts.focusWindow'),
-      store.get('shortcuts.toggleAlwaysOnTop')
+      () => store.set('isAlwaysOnTop', !store.get('isAlwaysOnTop'))
     )
-    shortcutManager.registerShortcuts()
+    shortcutManager.registerAll(store.get('shortcuts'))
 
     app.on('will-quit', () => {
       shortcutManager?.unregisterAll()

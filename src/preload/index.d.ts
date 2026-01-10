@@ -24,6 +24,8 @@ declare global {
       onAlwaysOnTopStatusChanged: (callback: (status: boolean) => void) => () => void
       dropFiles: (filePaths: string[]) => void
       getNetflixPreloadPath: () => Promise<string>
+      suspendShortcuts: () => void
+      resumeShortcuts: () => void
     }
   }
 }

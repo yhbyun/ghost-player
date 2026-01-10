@@ -1,38 +1,38 @@
 import { globalShortcut, BrowserWindow } from 'electron'
 import { SideDock } from './SideDock'
 
+export type ShortcutAction =
+  | 'toggleSideDock'
+  | 'disableSideDock'
+  | 'focusWindow'
+  | 'toggleAlwaysOnTop'
+
 export class ShortcutManager {
   private mainWindow: BrowserWindow
   private sideDock: SideDock
   private onSideDockToggle: (enabled: boolean) => void
   private onToggleAlwaysOnTop: () => void
-  private toggleSideDockShortcut: string
-  private disableSideDockShortcut: string
-  private focusWindowShortcut: string
-  private toggleAlwaysOnTopShortcut: string
+
+  private shortcuts: Map<ShortcutAction, string> = new Map()
+  private handlers: Map<ShortcutAction, () => void> = new Map()
+  private isSuspended: boolean = false
 
   constructor(
     mainWindow: BrowserWindow,
     sideDock: SideDock,
     onSideDockToggle: (enabled: boolean) => void,
-    onToggleAlwaysOnTop: () => void,
-    toggleSideDockShortcut: string,
-    disableSideDockShortcut: string,
-    focusWindowShortcut: string,
-    toggleAlwaysOnTopShortcut: string
+    onToggleAlwaysOnTop: () => void
   ) {
     this.mainWindow = mainWindow
     this.sideDock = sideDock
     this.onSideDockToggle = onSideDockToggle
     this.onToggleAlwaysOnTop = onToggleAlwaysOnTop
-    this.toggleSideDockShortcut = toggleSideDockShortcut
-    this.disableSideDockShortcut = disableSideDockShortcut
-    this.focusWindowShortcut = focusWindowShortcut
-    this.toggleAlwaysOnTopShortcut = toggleAlwaysOnTopShortcut
+
+    this.initializeHandlers()
   }
 
-  registerShortcuts(): void {
-    let ret = globalShortcut.register(this.toggleSideDockShortcut, () => {
+  private initializeHandlers(): void {
+    this.handlers.set('toggleSideDock', () => {
       if (!this.sideDock.getIsEnabled()) {
         this.onSideDockToggle(true)
       } else {
@@ -40,53 +40,74 @@ export class ShortcutManager {
       }
     })
 
-    if (!ret) {
-      console.error('Failed to register Toggle Side Dock shortcut:', this.toggleSideDockShortcut)
-    } else {
-      console.log('Successfully registered Toggle Side Dock shortcut:', this.toggleSideDockShortcut)
-    }
-
-    ret = globalShortcut.register(this.disableSideDockShortcut, () => {
+    this.handlers.set('disableSideDock', () => {
       this.onSideDockToggle(false)
     })
 
-    if (!ret) {
-      console.error('Failed to register Disable Side Dock shortcut:', this.disableSideDockShortcut)
-    } else {
-      console.log(
-        'Successfully registered Disable Side Dock shortcut:',
-        this.disableSideDockShortcut
-      )
-    }
-
-    ret = globalShortcut.register(this.focusWindowShortcut, () => {
+    this.handlers.set('focusWindow', () => {
       this.mainWindow.focus()
     })
 
-    if (!ret) {
-      console.error('Failed to register Focus Window shortcut:', this.focusWindowShortcut)
-    } else {
-      console.log('Successfully registered Focus Window shortcut:', this.focusWindowShortcut)
-    }
-
-    ret = globalShortcut.register(this.toggleAlwaysOnTopShortcut, () => {
+    this.handlers.set('toggleAlwaysOnTop', () => {
       this.onToggleAlwaysOnTop()
     })
+  }
 
-    if (!ret) {
-      console.error(
-        'Failed to register Toggle Always On Top shortcut:',
-        this.toggleAlwaysOnTopShortcut
-      )
-    } else {
-      console.log(
-        'Successfully registered Toggle Always On Top shortcut:',
-        this.toggleAlwaysOnTopShortcut
-      )
+  public setShortcut(action: ShortcutAction, accelerator: string): void {
+    const oldAccelerator = this.shortcuts.get(action)
+
+    if (oldAccelerator === accelerator) return
+
+    if (oldAccelerator) {
+      globalShortcut.unregister(oldAccelerator)
+    }
+
+    this.shortcuts.set(action, accelerator)
+
+    if (this.isSuspended) return
+
+    if (!accelerator) {
+      this.shortcuts.delete(action)
+      return
+    }
+
+    const handler = this.handlers.get(action)
+    if (handler) {
+      const success = globalShortcut.register(accelerator, handler)
+      if (success) {
+        console.log(`Successfully registered shortcut for ${action}: ${accelerator}`)
+      } else {
+        console.error(`Failed to register shortcut for ${action}: ${accelerator}`)
+      }
     }
   }
 
-  unregisterAll(): void {
+  public registerAll(shortcuts: Record<ShortcutAction, string>): void {
+    Object.entries(shortcuts).forEach(([action, accelerator]) => {
+      this.setShortcut(action as ShortcutAction, accelerator)
+    })
+  }
+
+  public suspendShortcuts(): void {
+    this.isSuspended = true
     globalShortcut.unregisterAll()
+    console.log('Global shortcuts suspended')
+  }
+
+  public resumeShortcuts(): void {
+    this.isSuspended = false
+    this.shortcuts.forEach((accelerator, action) => {
+      if (!accelerator) return
+      const handler = this.handlers.get(action)
+      if (handler) {
+        globalShortcut.register(accelerator, handler)
+      }
+    })
+    console.log('Global shortcuts resumed')
+  }
+
+  public unregisterAll(): void {
+    globalShortcut.unregisterAll()
+    this.shortcuts.clear()
   }
 }

@@ -84,7 +84,9 @@ const api = {
   dropFiles: (filePaths: string[]): void => {
     ipcRenderer.send('drop-files', filePaths)
   },
-  getNetflixPreloadPath: (): Promise<string> => ipcRenderer.invoke('get-netflix-preload-path')
+  getNetflixPreloadPath: (): Promise<string> => ipcRenderer.invoke('get-netflix-preload-path'),
+  suspendShortcuts: (): void => ipcRenderer.send('suspend-shortcuts'),
+  resumeShortcuts: (): void => ipcRenderer.send('resume-shortcuts')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

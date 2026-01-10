@@ -115,3 +115,60 @@
     width: 100%;
   }
 }
+
+.shortcut-item {
+  span {
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.shortcut-key-btn {
+  color: #4a9eff;
+  background-color: rgba(74, 158, 255, 0.1);
+  border: 1px solid rgba(74, 158, 255, 0.2);
+  cursor: pointer;
+  min-width: 90px;
+
+  &:hover {
+    background-color: rgba(74, 158, 255, 0.2);
+    border-color: rgba(74, 158, 255, 0.4);
+    color: #6fb2ff;
+  }
+}
+
+.hotkey-recorder-box {
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #4a9eff;
+  border-radius: 4px;
+  padding: 6px 10px;
+  min-width: 140px;
+  outline: none;
+  box-shadow: 0 0 15px rgba(74, 158, 255, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  animation: pulse-border 2s infinite;
+
+  .recording-status {
+    color: #4a9eff;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .helper-text {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+
+    b {
+      color: rgba(255, 255, 255, 0.7);
+    }
+  }
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(74, 158, 255, 0.4); }
+  50% { border-color: rgba(74, 158, 255, 1); }
+  100% { border-color: rgba(74, 158, 255, 0.4); }
+}
