@@ -31,10 +31,11 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ analyserNode, isVisua
     canvas.width = canvas.clientWidth
     canvas.height = canvas.clientHeight
 
-    // 최고 수준의 시각화를 위한 FFT 및 Smoothing 설정
-    // 2048 FFTSize는 1024개의 주파수 빈을 제공하여 저음역대를 가장 세밀하게 조각냅니다.
+    // FFT 및 Smoothing 설정 로직 최적화
+    // 2048 FFTSize는 주파수 해상도를 높여주며,
+    // smoothingTimeConstant를 0.8로 조정하여 오디오 출력 지연(Latency)과의 시각적 간극을 메웁니다.
     analyserNode.fftSize = 2048
-    analyserNode.smoothingTimeConstant = 0.45
+    analyserNode.smoothingTimeConstant = 0.8
 
     const bufferLength = analyserNode.frequencyBinCount
     const dataArray = new Uint8Array(bufferLength)

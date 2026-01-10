@@ -310,7 +310,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         return
       }
 
-      audioContextRef.current = new AudioContextClass()
+      audioContextRef.current = new AudioContextClass({ latencyHint: 'interactive' })
       sourceNodeRef.current = audioContextRef.current.createMediaElementSource(videoHtmlElement)
 
       try {
@@ -330,9 +330,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         const ctx = audioContextRef.current
 
         if (source && analyser && worklet && ctx) {
+          // 오디오 출력 지연을 최소화하기 위해 source를 destination에 직접 연결
+          source.connect(ctx.destination)
+          // 비주얼라이저와 자막 처리를 위해 병렬로 연결
           source.connect(analyser)
           source.connect(worklet)
-          analyser.connect(ctx.destination)
         }
       } catch (error) {
         console.error('Error adding AudioWorklet module or creating node:', error)
