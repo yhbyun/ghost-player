@@ -555,6 +555,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </div>
           </div>
         )}
+        <AudioVisualizer
+          analyserNode={analyserNodeRef.current}
+          isVisualizerEnabled={isVisualizerEnabled}
+        />
       </div>
       {filename && showFilename && (
         <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-4 py-2 rounded-md transition-opacity duration-300">
@@ -617,10 +621,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       >
         <FontAwesomeIcon icon={faClosedCaptioning} className="w-5 h-5" />
       </button>
-      <AudioVisualizer
-        analyserNode={analyserNodeRef.current}
-        isVisualizerEnabled={isVisualizerEnabled}
-      />
     </div>
   )
 }

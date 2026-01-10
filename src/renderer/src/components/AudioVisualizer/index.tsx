@@ -27,9 +27,19 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ analyserNode, isVisua
       return
     }
 
-    // Canvas 내부 실제 해상도 설정
-    canvas.width = canvas.clientWidth
-    canvas.height = canvas.clientHeight
+    // Canvas 내부 실제 해상도 설정 함수
+    const updateCanvasSize = (): void => {
+      canvas.width = canvas.clientWidth
+      canvas.height = canvas.clientHeight
+    }
+
+    updateCanvasSize()
+
+    // ResizeObserver를 사용하여 크기 변경 감지 (창 크조 조절 등 대응)
+    const resizeObserver = new ResizeObserver(() => {
+      updateCanvasSize()
+    })
+    resizeObserver.observe(canvas)
 
     // FFT 및 Smoothing 설정 로직 최적화
     // 2048 FFTSize는 주파수 해상도를 높여주며,
@@ -114,6 +124,7 @@ const AudioVisualizer: React.FC<AudioVisualizerProps> = ({ analyserNode, isVisua
 
     // Cleanup 함수
     return () => {
+      resizeObserver.disconnect()
       if (animationFrameIdRef.current !== null) {
         cancelAnimationFrame(animationFrameIdRef.current)
         animationFrameIdRef.current = null

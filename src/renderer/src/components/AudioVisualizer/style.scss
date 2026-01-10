@@ -1,10 +1,19 @@
 .audio-visualizer {
   position: absolute;
-  bottom: 80px;
+  /* 플레이어 하단 컨트롤 바 영역 근처에 위치하도록 설정 */
+  bottom: 40px;
   right: 10px;
-  width: 200px;
-  height: 50px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 5px;
+  /* 플레이어 크기에 따라 유동적으로 조절되는 가로/세로 */
+  width: 25%;
+  min-width: 80px; /* 더 작은 플레이어에도 대응하도록 축소 */
+  max-width: 300px;
+  height: 6%; /* 비율을 조금 더 슬림하게 조정 */
+  min-height: 25px; /* 더 작은 플레이어에도 대응하도록 축소 */
+  max-height: 80px;
+
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
   z-index: 10;
+  pointer-events: none; /* 클릭 방해 금지 */
+  transition: all 0.3s ease;
 }
