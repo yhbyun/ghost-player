@@ -15,17 +15,21 @@ Whether you're following a coding tutorial, watching a live stream, or just enjo
 - **Floating Window**: The player window floats on top of all other applications.
 - **Adjustable Transparency**: Fine-tune the opacity from 10% to 100%. Set transparency to be always on, or have it dynamically change on mouse-over or mouse-out.
 - **Multi-Service Support**: Easily switch between streaming services like YouTube and Netflix.
+- **Radial Menu**: Quickly switch services, open files, and navigate history with a floating radial controller.
 - **Local File Playback**: Open and watch local video files directly (`.mp4`, `.webm`, etc.).
+- **Playlist & Sidebar**: Manage multiple media files and navigate your queue with the Playlist Sidebar.
+- **Audio Visualizer**: Stunning, low-latency frequency visualizer that synchronizes with your audio.
+- **Live Captions**: Real-time transcription using OpenAI Whisper (Local/Remote) for videos without subtitles.
 - **Side Dock Mode**: Dock the player to the side of your screen. It will peek out, and you can fully reveal it by hovering over it.
 - **Click-Through Mode**: Make the player window non-interactive, allowing you to click through it to the applications underneath.
-- **Custom Shortcuts**: Configure global shortcuts to control the player without leaving your current window.
+- **Global Hotkey Customization**: Configure your own shortcuts with a "press-to-record" UI that adapts to your OS.
 - **Cross-Platform**: Available for Windows, macOS, and Linux.
 
 ## Getting Started
 
 ### For Users
 
-You can download the latest version of GhostPlayer from the [Releases page](https-your-github-repo-releases-link).
+You can download the latest version of GhostPlayer from the [Releases page](https://github.com/yhbyun/ghost-player/releases).
 
 ### For Developers
 
@@ -74,9 +78,11 @@ npm run build:linux
 - **Open a Video**:
   - Use `File > Open File...` (`Cmd/Ctrl+O`) to play a local video file.
   - Use `File > Open Location...` (`Cmd/Ctrl+L`) to stream from a URL.
+  - Drag and drop video files directly onto the player window.
 
 - **Switch Services**:
   - Navigate to the `Services` menu and select your desired streaming platform.
+  - Or use the **Radial Menu** (`+` icon) for even faster switching.
 
 - **Control Transparency**:
   - Go to `Settings > Transparency`.
@@ -86,6 +92,14 @@ npm run build:linux
 
 - **Toggle Always on Top**:
   - Use the `Settings > Always on Top` checkbox.
+
+- **Custom Shortcuts & Hotkeys**:
+  - Configure global hotkeys in `Settings > Shortcuts`.
+  - Use the recording UI to bind keys for Side Dock, Always on Top, etc.
+
+- **Audio Visualizer & Captions**:
+  - Enable the **Audio Visualizer** in `Settings > General`.
+  - Toggle **Live Captions** using the CC button on the player (Requires OpenAI Whisper settings).
 
 - **Enable Side Dock**:
   - Go to `Settings > Side Dock` and check `Enabled`.
